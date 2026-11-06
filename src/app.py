@@ -148,6 +148,7 @@ if 'disruption_type' in df_raw.columns:
     available_types = sorted(df_raw['disruption_type'].dropna().unique())
     selected_types = st.sidebar.multiselect("Select Disruption Type(s)", options=available_types, default=available_types)
 else:
+    available_types = []
     selected_types = []
 
 
@@ -167,15 +168,26 @@ if df.empty:
 
 # 5. KPI Metrics Row
 st.header("Key Performance Indicators")
+
+excluded_types = sorted(set(available_types) - set(selected_types))
+if excluded_types:
+    st.caption("Excluding: " + ", ".join(excluded_types))
+
 col1, col2 = st.columns(2)
 
 with col1:
     st.metric(label="Total Disruptions", value=f"{len(df):,}")
 
 with col2:
-    avg_duration = df[df['duration_hours'] > 0]['duration_hours'].mean()
-    avg_duration_val = f"{avg_duration:.1f} hours" if pd.notnull(avg_duration) else "0.0 hours"
-    st.metric(label="Avg Duration", value=avg_duration_val)
+    # Median, not mean: a few very long incidents would otherwise dominate the number.
+    median_duration = df[df['duration_hours'] > 0]['duration_hours'].median()
+    median_duration_val = f"{median_duration:.1f} hours" if pd.notnull(median_duration) else "n/a"
+    st.metric(
+        label="Median Duration",
+        value=median_duration_val,
+        help="Median of disruptions with a known duration. Uses the end time, or the "
+             "expected end time when no end time is known. Open-ended ones are excluded.",
+    )
 
 st.markdown("---")
 
