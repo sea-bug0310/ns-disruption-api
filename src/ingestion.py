@@ -403,23 +403,23 @@ def insert_snapshot(cur, disruption, now):
     """, {**disruption, "now": now})
 
 
-def mark_resolved_disruptions(cur, active_ids, now):
+def mark_resolved_disruptions(cur, active_ids):
+    """
+    Mark disruptions that vanished from the feed as resolved.
+
+    last_seen_at is deliberately NOT touched here: it must keep meaning
+    "last run in which the disruption was present in the NS feed".
+    """
     if not active_ids:
-        cur.execute("""
-            UPDATE disruptions
-            SET is_active = FALSE,
-                last_seen_at = %s
-            WHERE is_active = TRUE
-        """, (now,))
+        cur.execute("UPDATE disruptions SET is_active = FALSE WHERE is_active = TRUE")
         return
 
     cur.execute("""
         UPDATE disruptions
-        SET is_active = FALSE,
-            last_seen_at = %s
+        SET is_active = FALSE
         WHERE is_active = TRUE
           AND NOT (id = ANY(%s))
-    """, (now, active_ids))
+    """, (active_ids,))
 
 # ---------------- Main job ----------------
 
@@ -451,7 +451,7 @@ def run_ingestion():
 
             saved_count += 1
 
-        mark_resolved_disruptions(cur, active_ids, now)
+        mark_resolved_disruptions(cur, active_ids)
 
         conn.commit()
         log.info("Saved %s disruptions to database", saved_count)
