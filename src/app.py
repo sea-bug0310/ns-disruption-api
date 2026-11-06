@@ -199,7 +199,6 @@ st.header("📈 Time Trends")
 # encode it a second time; the values are printed on the bars instead.
 TREND_COLOR = "#4C9BE8"
 BREAKDOWN_COLOR = "#F28E2B"
-CHART_FONT_SIZE = 15  # plotly's default is 12; Streamlit's baseFontSize does not reach inside charts
 
 
 def top_counts(frame, column, n=10):
@@ -228,7 +227,6 @@ def horizontal_bar(counts, category_col):
     )
     fig.update_layout(
         showlegend=False,
-        font={"size": CHART_FONT_SIZE},
         yaxis={"categoryorder": "total ascending", "title": None},
         xaxis={"visible": False},
     )
@@ -255,7 +253,6 @@ fig_trend = px.bar(
 fig_trend.update_traces(textposition="outside", cliponaxis=False)
 fig_trend.update_layout(
     showlegend=False,
-    font={"size": CHART_FONT_SIZE},
     xaxis_type='category',
     xaxis_title=None,
     yaxis={"visible": False},

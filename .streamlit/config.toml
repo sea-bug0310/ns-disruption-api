@@ -1,3 +1,0 @@
-[theme]
-# Streamlit's default is 16. Captions, metric labels and table text all scale from this.
-baseFontSize = 18
