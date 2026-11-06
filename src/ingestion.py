@@ -36,6 +36,10 @@ API_KEY = os.environ.get("NS_API_KEY")
 URL = "https://gateway.apiportal.ns.nl/disruptions/v3"
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
+# If the feed is empty but at least this many disruptions are active in the DB,
+# treat it as a suspicious response and do not mass-close them. Tune from real data.
+EMPTY_FEED_GUARD_THRESHOLD = 5
+
 # ------------------DB CONNECTION --------------
 def get_connection():
     if not DATABASE_URL:
@@ -411,6 +415,18 @@ def mark_resolved_disruptions(cur, active_ids):
     "last run in which the disruption was present in the NS feed".
     """
     if not active_ids:
+        # Guard: an empty feed while many disruptions are active is more likely
+        # a bad API response than a real "everything resolved at once".
+        cur.execute("SELECT count(*) FROM disruptions WHERE is_active = TRUE")
+        currently_active = cur.fetchone()[0]
+
+        if currently_active >= EMPTY_FEED_GUARD_THRESHOLD:
+            log.warning(
+                "Feed is empty but %s disruptions are active - skipping close step",
+                currently_active,
+            )
+            return
+
         cur.execute("UPDATE disruptions SET is_active = FALSE WHERE is_active = TRUE")
         return
 
