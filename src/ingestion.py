@@ -454,7 +454,6 @@ def run_ingestion():
         mark_resolved_disruptions(cur, active_ids, now)
 
         conn.commit()
-        log.info("Inserted/updated disruption id=%s", disruption["id"])
         log.info("Saved %s disruptions to database", saved_count)
 
     except requests.exceptions.Timeout:
