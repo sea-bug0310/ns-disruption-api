@@ -7,6 +7,32 @@ Decisions with real trade-offs are explained in [docs/decisions/](docs/decisions
 
 ## [Unreleased]
 
+### Iteration 2 - Dashboard fixes (branch `dashboard-improvements`, 2026-11-06)
+
+#### Fixed
+- "Active right now" no longer depends on the sidebar filters (it used to be hidden by them).
+  It is queried directly and shown at the top instead of inside an expander.
+- Month filter only offers months that have data in the selected year.
+- Timestamps are parsed as UTC with `format="ISO8601"`. Previously a column with no values could
+  crash the page, and rows whose timestamp precision differed from the first row were silently
+  dropped.
+
+#### Added
+- "Data as of" line, plus a warning when the pipeline has not seen data for more than 3 hours.
+- Caption listing disruption types excluded in the sidebar.
+
+#### Changed
+- Duration KPI is now the median instead of the mean, with a tooltip explaining how it is derived.
+- Bar charts use one colour per chart, show values on the bars, and drop redundant axis titles and
+  colourbars.
+
+#### Still open
+- Dashboard still reads all rows with `select("*")` (the 1000-row cap, see iteration 1).
+- Counts only cover what the pipeline saw; periods when the scheduled workflow was disabled are
+  gaps. Planned: keep-alive for the workflow and a rebuilt table.
+- `consequence_level` is mostly blank or `LESS_TRAINS` in the data; the consequences chart uses
+  the free-text `consequence_description` instead. Reason for the blanks not yet investigated.
+
 ### Iteration 1 - Critical bug fixes (branch `fix-critical-bugs`, 2026-11-06)
 
 #### Fixed
