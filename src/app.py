@@ -195,28 +195,68 @@ st.markdown("---")
 # 6. Interactive Time Series Breakdown with View Switching Buttons
 st.header("📈 Time Trends")
 
+# One colour per chart family. Bar length already encodes the value, so colour should not
+# encode it a second time; the values are printed on the bars instead.
+TREND_COLOR = "#4C9BE8"
+BREAKDOWN_COLOR = "#F28E2B"
+
+
+def top_counts(frame, column, n=10):
+    """Most frequent non-empty values of `column`, with a text label for the bars."""
+    values = frame[column].dropna()
+    values = values[values != ""]
+    counts = values.value_counts().head(n).rename_axis(column).reset_index(name="count")
+    counts["label"] = counts["count"].map("{:,}".format)
+    return counts
+
+
+def horizontal_bar(counts, category_col):
+    """Single-colour horizontal bar chart with value labels and no redundant axis titles."""
+    fig = px.bar(
+        counts,
+        x="count",
+        y=category_col,
+        orientation="h",
+        text="label",
+        color_discrete_sequence=[BREAKDOWN_COLOR],
+    )
+    fig.update_traces(
+        textposition="outside",
+        cliponaxis=False,
+        hovertemplate="<b>%{y}</b><br>Incidents: %{text}<extra></extra>",
+    )
+    fig.update_layout(
+        showlegend=False,
+        yaxis={"categoryorder": "total ascending", "title": None},
+        xaxis={"visible": False},
+    )
+    return fig
+
+
 view_option = st.radio("Select View", options=["By Month-Year", "By Week-Year"], horizontal=True)
 
 if view_option == "By Month-Year":
     trend_data = df.groupby(['Year_Month']).size().reset_index(name='Disruption Count').sort_values('Year_Month')
     x_col = 'Year_Month'
-    x_label = 'Timeline (Year-Month)'
 else:
     trend_data = df.groupby(['Year_Week']).size().reset_index(name='Disruption Count').sort_values('Year_Week')
     x_col = 'Year_Week'
-    x_label = 'Timeline (Year-Week)'
 
 fig_trend = px.bar(
-    trend_data, 
-    x=x_col, 
+    trend_data,
+    x=x_col,
     y='Disruption Count',
+    text='Disruption Count',
     title="Disruptions Count Trend",
-    labels={x_col: x_label, 'Disruption Count': 'Number of Incidents'},
-    color='Disruption Count',
-    color_continuous_scale=px.colors.sequential.Blues[3:]
+    color_discrete_sequence=[TREND_COLOR],
 )
-
-fig_trend.update_layout(xaxis_type='category')
+fig_trend.update_traces(textposition="outside", cliponaxis=False)
+fig_trend.update_layout(
+    showlegend=False,
+    xaxis_type='category',
+    xaxis_title=None,
+    yaxis={"visible": False},
+)
 st.plotly_chart(fig_trend, use_container_width=True)
 st.markdown("---")
 
@@ -224,77 +264,28 @@ st.markdown("---")
 # 7. Categorical Visualizations Row
 st.header("Disruption Breakdowns")
 col1, col2, col3 = st.columns(3)
+
 # --- Chart 1: Disruption Type ---
 with col1:
     st.subheader("Breakdown by Type")
     if 'disruption_type' in df.columns:
-        type_counts = df['disruption_type'].value_counts().reset_index()
-        type_counts.columns = ['disruption_type', 'count']
-        
-        # 1. Calculate percentage for each category
-        total_count = type_counts['count'].sum()
-        type_counts['percentage'] = (type_counts['count'] / total_count) * 100
-        
-        fig_type = px.bar(
-            type_counts, 
-            x='count', 
-            y='disruption_type', 
-            orientation='h',
-            color='count',
-            color_continuous_scale=px.colors.sequential.Oranges[3:],
-            custom_data=['percentage'], # Pass percentage column to Plotly
-            labels={'disruption_type': 'Disruption Type', 'count': 'Incidents'}
-        )
-        
-        # 2. Customize the hover popup template
-        fig_type.update_traces(
-            hovertemplate="<b>%{y}</b><br>Incidents: %{x:,}<br>Percentage: %{customdata[0]:.1f}%<extra></extra>"
-        )
-        
-        fig_type.update_layout(yaxis={'categoryorder': 'total ascending'})
-        st.plotly_chart(fig_type, use_container_width=True)
+        type_counts = top_counts(df, 'disruption_type', n=50)
+        type_total = type_counts['count'].sum()
+        type_counts['label'] = [f"{c:,} ({c / type_total:.0%})" for c in type_counts['count']]
+        st.plotly_chart(horizontal_bar(type_counts, 'disruption_type'), use_container_width=True)
 
-
-# --- Chart 2: Consequence Level ---
+# --- Chart 2: Consequences ---
 with col2:
     st.subheader("Top 10 Consequences")
-    
-    # Use consequence_description if available, otherwise fallback to consequence_level
+
+    # Use consequence_description if available, otherwise fall back to consequence_level
     consequence_col = 'consequence_description' if 'consequence_description' in df.columns else 'consequence_level'
-    
+
     if consequence_col in df.columns:
-        clean_consequence_df = df[df[consequence_col].notna() & (df[consequence_col] != "")]
-        consequence_counts = clean_consequence_df[consequence_col].value_counts().reset_index()
-        consequence_counts.columns = [consequence_col, 'count']
-        
-        fig_consequence = px.bar(
-            consequence_counts.head(10), 
-            x='count', 
-            y=consequence_col,
-            orientation='h',
-            color='count',
-            color_continuous_scale=px.colors.sequential.Oranges[3:],
-            labels={consequence_col: 'Consequence', 'count': 'Incidents'}
-        )
-        fig_consequence.update_layout(yaxis={'categoryorder': 'total ascending'})
-        st.plotly_chart(fig_consequence, use_container_width=True)
+        st.plotly_chart(horizontal_bar(top_counts(df, consequence_col), consequence_col), use_container_width=True)
 
 # --- Chart 3: Top Causes ---
 with col3:
     st.subheader("Top 10 Causes")
     if 'cause_label' in df.columns:
-        clean_cause_df = df[df['cause_label'].notna() & (df['cause_label'] != "")]
-        cause_counts = clean_cause_df['cause_label'].value_counts().reset_index()
-        cause_counts.columns = ['cause_label', 'count']
-        
-        fig_cause = px.bar(
-            cause_counts.head(10), 
-            x='count', 
-            y='cause_label', 
-            orientation='h', 
-            color='count',
-            color_continuous_scale=px.colors.sequential.Oranges[3:],
-            labels={'cause_label': 'Cause', 'count': 'Incidents'}
-        )
-        fig_cause.update_layout(yaxis={'categoryorder': 'total ascending'})
-        st.plotly_chart(fig_cause, use_container_width=True)
+        st.plotly_chart(horizontal_bar(top_counts(df, 'cause_label'), 'cause_label'), use_container_width=True)
