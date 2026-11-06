@@ -22,19 +22,23 @@ except Exception as e:
     st.stop()
 
 # 3. Load Data from Supabase
-@st.cache_data(ttl=300)
-def load_data():
-    response = supabase.table("disruptions").select("*").execute()
-    df = pd.DataFrame(response.data)
+def prepare_disruptions(df, drop_missing_start=True):
+    """Parse dates and add duration / time features to raw `disruptions` rows."""
     
     if df.empty:
         return df
         
     # --- Data Processing ---
-    df['start_time'] = pd.to_datetime(df['start_time'], errors='coerce')
-    df['end_time'] = pd.to_datetime(df['end_time'], errors='coerce')
+    # utc=True keeps every column timezone-aware, even when a whole column is empty.
+    # format="ISO8601" stops pandas from guessing the format from the first row and
+    # silently turning rows with a different precision (e.g. fractional seconds) into NaT.
+    def to_utc(series):
+        return pd.to_datetime(series, errors='coerce', utc=True, format='ISO8601')
+
+    df['start_time'] = to_utc(df['start_time'])
+    df['end_time'] = to_utc(df['end_time'])
     if 'expected_duration_end_time' in df.columns:
-        df['end_time'] = df['end_time'].fillna(pd.to_datetime(df['expected_duration_end_time'], errors='coerce'))
+        df['end_time'] = df['end_time'].fillna(to_utc(df['expected_duration_end_time']))
     
     df['duration_minutes'] = (df['end_time'] - df['start_time']).dt.total_seconds() / 60.0
     df['duration_minutes'] = df['duration_minutes'].apply(lambda x: max(x, 0) if pd.notnull(x) else 0)
@@ -42,7 +46,8 @@ def load_data():
     df['affected_km'] = pd.to_numeric(df['affected_km'], errors='coerce').fillna(0)
     
     # --- Time Feature Extractions ---
-    df = df[df['start_time'].notna()].copy()
+    if drop_missing_start:
+        df = df[df['start_time'].notna()].copy()
     df['Year'] = df['start_time'].dt.year
     df['Month'] = df['start_time'].dt.strftime('%B') 
     df['Year_Month'] = df['start_time'].dt.strftime('%Y-%m') 
@@ -52,8 +57,73 @@ def load_data():
     
     return df
 
+
+@st.cache_data(ttl=300)
+def load_data():
+    """All historical disruptions (used by the filtered charts)."""
+    response = supabase.table("disruptions").select("*").execute()
+    return prepare_disruptions(pd.DataFrame(response.data))
+
+
+@st.cache_data(ttl=60)
+def load_active():
+    """Disruptions active right now. Deliberately independent of the sidebar filters."""
+    response = supabase.table("disruptions").select("*").eq("is_active", True).execute()
+    return prepare_disruptions(pd.DataFrame(response.data), drop_missing_start=False)
+
+
+@st.cache_data(ttl=60)
+def load_data_as_of():
+    """Last time the pipeline saw any disruption in the NS feed."""
+    response = (
+        supabase.table("disruptions")
+        .select("last_seen_at")
+        .order("last_seen_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+    if not response.data:
+        return None
+    return pd.to_datetime(
+        response.data[0]["last_seen_at"], utc=True, errors="coerce", format="ISO8601"
+    )
+
+
 with st.spinner("Fetching data from Supabase..."):
     df_raw = load_data()
+    df_active = load_active()
+    data_as_of = load_data_as_of()
+
+# --- Freshness + live section: independent of the sidebar filters ---
+STALE_AFTER_HOURS = 3  # the pipeline runs every ~20 min; GitHub cron can be late
+
+if data_as_of is not None and pd.notna(data_as_of):
+    age_hours = (pd.Timestamp.now(tz="UTC") - data_as_of).total_seconds() / 3600
+    st.caption(f"Data as of {data_as_of:%Y-%m-%d %H:%M} UTC")
+    if age_hours > STALE_AFTER_HOURS:
+        st.warning(
+            f"The pipeline has not seen new data for {age_hours:.0f} hours, "
+            "so the numbers below may be out of date."
+        )
+
+st.header("🔴 Active right now")
+st.metric(label="Active disruptions", value=len(df_active))
+
+if df_active.empty:
+    st.info("No active disruptions in the latest data.")
+else:
+    live_cols = [
+        'title', 'disruption_type', 'start_time', 'end_time', 'from_station', 'to_station',
+        'affected_km', 'consequence_description', 'cause_label',
+    ]
+    live_cols = [c for c in live_cols if c in df_active.columns]
+    st.dataframe(
+        df_active.sort_values('start_time', ascending=False, na_position='last')[live_cols],
+        hide_index=True,
+        use_container_width=True,
+    )
+
+st.markdown("---")
 
 if df_raw.empty:
     st.warning("No data found in your Supabase 'disruptions' table.")
@@ -68,7 +138,9 @@ selected_year = st.sidebar.selectbox("Select Year", options=available_years, ind
 
 # Month Multi-select Filter
 month_order = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
-available_months = [m for m in month_order if m in df_raw['Month'].unique()]
+# Only offer months that actually have data in the selected year
+months_in_year = df_raw.loc[df_raw['Year'] == selected_year, 'Month'].unique()
+available_months = [m for m in month_order if m in months_in_year]
 selected_months = st.sidebar.multiselect("Select Month(s)", options=available_months, default=available_months)
 
 #Disruption Type Multi-select Filter
@@ -95,7 +167,7 @@ if df.empty:
 
 # 5. KPI Metrics Row
 st.header("Key Performance Indicators")
-col1, col2, col3 = st.columns(3)
+col1, col2 = st.columns(2)
 
 with col1:
     st.metric(label="Total Disruptions", value=f"{len(df):,}")
@@ -104,10 +176,6 @@ with col2:
     avg_duration = df[df['duration_hours'] > 0]['duration_hours'].mean()
     avg_duration_val = f"{avg_duration:.1f} hours" if pd.notnull(avg_duration) else "0.0 hours"
     st.metric(label="Avg Duration", value=avg_duration_val)
-
-with col3:
-    active_count = df[df['is_active'] == True].shape[0] if 'is_active' in df.columns else 0
-    st.metric(label="Active Disruptions", value=active_count)
 
 st.markdown("---")
 
@@ -218,25 +286,3 @@ with col3:
         )
         fig_cause.update_layout(yaxis={'categoryorder': 'total ascending'})
         st.plotly_chart(fig_cause, use_container_width=True)
-
-# 8. Detailed Data View
-st.markdown("---")
-
-with st.expander("🔍 View Live Active Disruptions"):
-    # Filter for active disruptions only (is_active == True)
-    if 'is_active' in df.columns:
-        active_mask = df['is_active'].astype(str).str.lower().isin(['true', '1'])
-        active_df = df[active_mask]
-    else:
-        active_df = df
-    preview_cols = [
-        'id', 'title', 'disruption_type', 'start_time', 'end_time', 
-        'duration_hours', 'from_station', 'to_station', 'affected_km', 'consequence_level',
-        'consequence_description', 'cause_label', 'Year_Month', 'Year_Week'
-    ]
-    available_cols = [col for col in preview_cols if col in active_df.columns]
-    
-    if active_df.empty:
-        st.info("No active disruptions currently recorded.")
-    else:
-        st.dataframe(active_df[available_cols].sort_values(by='start_time', ascending=False))
