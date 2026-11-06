@@ -1,0 +1,777 @@
+openapi: 3.0.1
+info:
+  title: SpoorKaart API
+  description: API used to query about tracks so that they can be plotted on a map. The api returns GeoJSON or other geo formats.
+  version: '1.0'
+servers:
+  - url: https://gateway.apiportal.ns.nl/Spoorkaart-API
+paths:
+  /api/v1/spoorkaart:
+    get:
+      tags:
+        - Spoorkaart
+      summary: Spoorkaart
+      description: Returns geojson information for all rail tracks in The Netherlands
+      operationId: getSpoorkaart
+      responses:
+        '200':
+          description: A list of geojson features
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+            Access-Control-Allow-Credentials:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Representation'
+                  - $ref: '#/components/schemas/FeatureCollection'
+              example:
+                self:
+                  params: { }
+                  uriBuilder: { }
+                  rel: string
+                  rels:
+                    - string
+                  uri: string
+                  title: string
+                  type: string
+                links: { }
+                payload: { }
+                meta: { }
+                crs:
+                  type: name
+                  properties: { }
+                bbox:
+                  - 0
+                features:
+                  - crs:
+                      type: name
+                      properties: { }
+                    bbox:
+                      - 0
+                    properties: { }
+                    geometry:
+                      crs:
+                        type: name
+                        properties: { }
+                      bbox:
+                        - 0
+                      type: string
+                    id: string
+  '/api/v1/storingen/{id}':
+    get:
+      tags:
+        - Disruptions
+      summary: Disruption by id
+      description: Disruptions or maintenance geojson feature based on an ID
+      operationId: getStoring
+      parameters:
+        - name: id
+          in: path
+          description: ID of the disruption
+          required: true
+          schema:
+            type: string
+        - name: extension
+          in: query
+          description: When requesting geojson format use .geojson
+          schema:
+            type: string
+          example: .json
+        - name: Accept
+          in: header
+          description: Accept content header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of geojson features about disruptions
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Representation'
+                  - $ref: '#/components/schemas/FeatureCollection'
+              example:
+                self:
+                  params: { }
+                  uriBuilder: { }
+                  rel: string
+                  rels:
+                    - string
+                  uri: string
+                  title: string
+                  type: string
+                links: { }
+                payload: { }
+                meta: { }
+                crs:
+                  type: name
+                  properties: { }
+                bbox:
+                  - 0
+                features:
+                  - crs:
+                      type: name
+                      properties: { }
+                    bbox:
+                      - 0
+                    properties: { }
+                    geometry:
+                      crs:
+                        type: name
+                        properties: { }
+                      bbox:
+                        - 0
+                      type: string
+                    id: string
+  /api/v1/traject:
+    get:
+      tags:
+        - Route
+      summary: Route
+      description: A (geo)json map line of the list of stations specified
+      operationId: getTraject
+      parameters:
+        - name: stations
+          in: query
+          description: 'list of stationcodes (more than 1). Note that the station have to be connected directly with each other. A line from Roermond to Maarheeze would be RM,WT,MH. Roermond, Weert, Maarheeze'
+          required: true
+          schema:
+            type: array
+            items:
+              type: string
+          example: 'RM,WT,MZ'
+        - name: Accept
+          in: header
+          description: Accept content header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A (geo)json map line between two stations
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+          content:
+            application/geo+json:
+              schema:
+                $ref: '#/components/schemas/FeatureCollection'
+              example:
+                crs:
+                  type: name
+                  properties: { }
+                bbox:
+                  - 0
+                features:
+                  - crs:
+                      type: name
+                      properties: { }
+                    bbox:
+                      - 0
+                    properties: { }
+                    geometry:
+                      crs:
+                        type: name
+                        properties: { }
+                      bbox:
+                        - 0
+                      type: string
+                    id: string
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Representation'
+                  - $ref: '#/components/schemas/FeatureCollection'
+              example:
+                self:
+                  params: { }
+                  uriBuilder: { }
+                  rel: string
+                  rels:
+                    - string
+                  uri: string
+                  title: string
+                  type: string
+                links: { }
+                payload: { }
+                meta: { }
+                crs:
+                  type: name
+                  properties: { }
+                bbox:
+                  - 0
+                features:
+                  - crs:
+                      type: name
+                      properties: { }
+                    bbox:
+                      - 0
+                    properties: { }
+                    geometry:
+                      crs:
+                        type: name
+                        properties: { }
+                      bbox:
+                        - 0
+                      type: string
+                    id: string
+  /api/v1/storingen.geojson:
+    get:
+      summary: Disruptions
+      description: 'Disruptions and maintenance geojson features. Disruptions and maintenance IDs originate from other API: reisinfo/v3/disruptions'
+      operationId: getStoringenGeoJson
+      parameters:
+        - name: startDate
+          in: query
+          description: Only disruptions/maintenance after a date
+          schema:
+            type: string
+          example: '2018-10-04T13:58:45.0000000+00:00'
+        - name: endDate
+          in: query
+          description: Only disruptions/maintenance before a date
+          schema:
+            type: string
+          example: '2018-10-04T13:58:45.0000000+00:00'
+        - name: actual
+          in: query
+          description: Only actual disruptions and maintenance
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: 'When requesting (geo)json, response is a list of geojson features with disruptions'
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Representation'
+                  - $ref: '#/components/schemas/FeatureCollection'
+              example:
+                self:
+                  params: { }
+                  uriBuilder: { }
+                  rel: string
+                  rels:
+                    - string
+                  uri: string
+                  title: string
+                  type: string
+                links: { }
+                payload: { }
+                meta: { }
+                crs:
+                  type: name
+                  properties: { }
+                bbox:
+                  - 0
+                features:
+                  - crs:
+                      type: name
+                      properties: { }
+                    bbox:
+                      - 0
+                    properties: { }
+                    geometry:
+                      crs:
+                        type: name
+                        properties: { }
+                      bbox:
+                        - 0
+                      type: string
+                    id: string
+  /api/v1/storingen:
+    get:
+      summary: Disruptions
+      description: 'Disruptions and maintenance geojson features. Disruptions and maintenance IDs originate from other API: reisinfo/v3/disruptions'
+      operationId: getStoringen
+      parameters:
+        - name: startDate
+          in: query
+          description: Only disruptions/maintenance after a date
+          schema:
+            type: string
+          example: '2018-10-04T13:58:45.0000000+00:00'
+        - name: endDate
+          in: query
+          description: Only disruptions/maintenance before a date
+          schema:
+            type: string
+          example: '2018-10-04T13:58:45.0000000+00:00'
+        - name: actual
+          in: query
+          description: Only actual disruptions and maintenance
+          schema:
+            type: boolean
+            default: true
+        - name: Accept
+          in: header
+          description: Accept content header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 'When requesting (geo)json, response is a list of geojson features with disruptions'
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Representation'
+                  - $ref: '#/components/schemas/FeatureCollection'
+              example:
+                self:
+                  params: { }
+                  uriBuilder: { }
+                  rel: string
+                  rels:
+                    - string
+                  uri: string
+                  title: string
+                  type: string
+                links: { }
+                payload: { }
+                meta: { }
+                crs:
+                  type: name
+                  properties: { }
+                bbox:
+                  - 0
+                features:
+                  - crs:
+                      type: name
+                      properties: { }
+                    bbox:
+                      - 0
+                    properties: { }
+                    geometry:
+                      crs:
+                        type: name
+                        properties: { }
+                      bbox:
+                        - 0
+                      type: string
+                    id: string
+  /api/v1/storingen.json:
+    get:
+      summary: Disruptions
+      description: 'Disruptions and maintenance geojson features. Disruptions and maintenance IDs originate from other API: reisinfo/v3/disruptions'
+      operationId: getStoringenJson
+      parameters:
+        - name: startDate
+          in: query
+          description: Only disruptions/maintenance after a date
+          schema:
+            type: string
+          example: '2018-10-04T13:58:45.0000000+00:00'
+        - name: endDate
+          in: query
+          description: Only disruptions/maintenance before a date
+          schema:
+            type: string
+          example: '2018-10-04T13:58:45.0000000+00:00'
+        - name: actual
+          in: query
+          description: Only actual disruptions and maintenance
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: 'When requesting (geo)json, response is a list of geojson features with disruptions'
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Representation'
+                  - $ref: '#/components/schemas/FeatureCollection'
+              example:
+                self:
+                  params: { }
+                  uriBuilder: { }
+                  rel: string
+                  rels:
+                    - string
+                  uri: string
+                  title: string
+                  type: string
+                links: { }
+                payload: { }
+                meta: { }
+                crs:
+                  type: name
+                  properties: { }
+                bbox:
+                  - 0
+                features:
+                  - crs:
+                      type: name
+                      properties: { }
+                    bbox:
+                      - 0
+                    properties: { }
+                    geometry:
+                      crs:
+                        type: name
+                        properties: { }
+                      bbox:
+                        - 0
+                      type: string
+                    id: string
+  /api/v1/traject.json:
+    get:
+      summary: Route
+      description: A (geo)json map line of the list of stations specified
+      operationId: getTrajectJson
+      parameters:
+        - name: stations
+          in: query
+          description: 'list of stationcodes (more than 1). Note that the station have to be connected directly with each other. A line from Roermond to Maarheeze would be RM,WT,MH. Roermond, Weert, Maarheeze'
+          schema:
+            type: array
+            items:
+              type: string
+          example: 'RM,WT,MZ'
+      responses:
+        '200':
+          description: A (geo)json map line between two stations
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Representation'
+                  - $ref: '#/components/schemas/FeatureCollection'
+              example:
+                self:
+                  params: { }
+                  uriBuilder: { }
+                  rel: string
+                  rels:
+                    - string
+                  uri: string
+                  title: string
+                  type: string
+                links: { }
+                payload: { }
+                meta: { }
+                crs:
+                  type: name
+                  properties: { }
+                bbox:
+                  - 0
+                features:
+                  - crs:
+                      type: name
+                      properties: { }
+                    bbox:
+                      - 0
+                    properties: { }
+                    geometry:
+                      crs:
+                        type: name
+                        properties: { }
+                      bbox:
+                        - 0
+                      type: string
+                    id: string
+  /api/v1/traject.geojson:
+    get:
+      summary: Route
+      description: A (geo)json map line of the list of stations specified
+      operationId: getTrajectGeojson
+      parameters:
+        - name: stations
+          in: query
+          description: 'list of stationcodes (more than 1). Note that the station have to be connected directly with each other. A line from Roermond to Maarheeze would be RM,WT,MH. Roermond, Weert, Maarheeze'
+          schema:
+            type: array
+            items:
+              type: string
+          example: 'RM,WT,MZ'
+      responses:
+        '200':
+          description: A (geo)json map line between two stations
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+          content:
+            application/geo+json:
+              schema:
+                $ref: '#/components/schemas/FeatureCollection'
+              example:
+                crs:
+                  type: name
+                  properties: { }
+                bbox:
+                  - 0
+                features:
+                  - crs:
+                      type: name
+                      properties: { }
+                    bbox:
+                      - 0
+                    properties: { }
+                    geometry:
+                      crs:
+                        type: name
+                        properties: { }
+                      bbox:
+                        - 0
+                      type: string
+                    id: string
+components:
+  schemas:
+    Representation:
+      type: object
+      properties:
+        self:
+          type: object
+          properties:
+            params:
+              type: object
+              additionalProperties:
+                type: string
+            uriBuilder:
+              type: object
+            rel:
+              type: string
+            rels:
+              type: array
+              items:
+                type: string
+            uri:
+              type: string
+              format: uri
+            title:
+              type: string
+            type:
+              type: string
+        links:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              params:
+                type: object
+                additionalProperties:
+                  type: string
+              uriBuilder:
+                type: object
+              rel:
+                type: string
+              rels:
+                type: array
+                items:
+                  type: string
+              uri:
+                type: string
+                format: uri
+              title:
+                type: string
+              type:
+                type: string
+        payload:
+          type: object
+        meta:
+          type: object
+          additionalProperties:
+            type: object
+    Crs:
+      type: object
+      properties:
+        type:
+          enum:
+            - name
+            - link
+          type: string
+        properties:
+          type: object
+          additionalProperties:
+            type: object
+    Feature:
+      type: object
+      properties:
+        crs:
+          $ref: '#/components/schemas/Crs'
+        bbox:
+          type: array
+          items:
+            type: number
+            format: double
+        properties:
+          type: object
+          additionalProperties:
+            type: object
+        geometry:
+          $ref: '#/components/schemas/GeoJsonObject'
+        id:
+          type: string
+    FeatureCollection:
+      type: object
+      properties:
+        crs:
+          $ref: '#/components/schemas/Crs'
+        bbox:
+          type: array
+          items:
+            type: number
+            format: double
+        features:
+          type: array
+          items:
+            $ref: '#/components/schemas/Feature'
+    GeoJsonObject:
+      required:
+        - type
+      type: object
+      properties:
+        crs:
+          $ref: '#/components/schemas/Crs'
+        bbox:
+          type: array
+          items:
+            type: number
+            format: double
+        type:
+          type: string
+    GeometryCollection:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/GeoJsonObject'
+        - type: object
+          properties:
+            geometries:
+              type: array
+              items:
+                $ref: '#/components/schemas/GeoJsonObject'
+    LineString:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/GeoJsonObject'
+        - type: object
+          properties:
+            coordinates:
+              type: array
+              items:
+                $ref: '#/components/schemas/LngLatAlt'
+    LngLatAlt:
+      type: object
+      properties:
+        longitude:
+          type: number
+          format: double
+        latitude:
+          type: number
+          format: double
+        altitude:
+          type: number
+          format: double
+        additionalElements:
+          type: array
+          items:
+            type: number
+            format: double
+    MultiLineString:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/GeoJsonObject'
+        - type: object
+          properties:
+            coordinates:
+              type: array
+              items:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LngLatAlt'
+    MultiPoint:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/GeoJsonObject'
+        - type: object
+          properties:
+            coordinates:
+              type: array
+              items:
+                $ref: '#/components/schemas/LngLatAlt'
+    MultiPolygon:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/GeoJsonObject'
+        - type: object
+          properties:
+            coordinates:
+              type: array
+              items:
+                type: array
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/LngLatAlt'
+    Point:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/GeoJsonObject'
+        - type: object
+          properties:
+            coordinates:
+              $ref: '#/components/schemas/LngLatAlt'
+    Polygon:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/GeoJsonObject'
+        - type: object
+          properties:
+            coordinates:
+              type: array
+              items:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LngLatAlt'
+  securitySchemes:
+    apiKeyHeader:
+      type: apiKey
+      name: Ocp-Apim-Subscription-Key
+      in: header
+    apiKeyQuery:
+      type: apiKey
+      name: subscription-key
+      in: query
+security:
+  - apiKeyHeader: [ ]
+  - apiKeyQuery: [ ]

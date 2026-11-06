@@ -1,0 +1,3986 @@
+openapi: 3.0.1
+info:
+  title: Places API
+  description: 'The Places API is responsible for giving (location) data about different places. A Place is an abstraction of a piece of information that is related to a specific location, like addresses, Google POI''s, bus/tram stops, stations and their facilities, greenwheels cars, cities etc.'
+  version: '1.0'
+servers:
+  - url: https://gateway.apiportal.ns.nl/places-api
+paths:
+  '/v2/autosuggest/{type}/{id}':
+    get:
+      tags:
+        - Autosuggest
+      summary: Auto suggest for type
+      description: Request a specific autosuggest resource. This endpoint is deprecated. Please use /api/v2/places
+      operationId: autoSuggestForType
+      parameters:
+        - name: type
+          in: path
+          description: The type of place.
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: The id of the place.
+          required: true
+          schema:
+            type: string
+        - name: x-api-key
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Information about a specific place; Representation contains payload of type Location
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                $ref: '#/components/schemas/RepresentationLocation'
+        '400':
+          description: Information about a specific place; Representation contains payload of type Location
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                $ref: '#/components/schemas/RepresentationLocation'
+        '500':
+          description: Information about a specific place; Representation contains payload of type Location
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                $ref: '#/components/schemas/RepresentationLocation'
+  /v2/autosuggest:
+    get:
+      tags:
+        - Autosuggest
+      summary: Auto suggest
+      description: Performs an auto suggest based on the given types and q. The default types on which is searched are address and stops. This endpoint is deprecated. Please use /api/v2/places
+      operationId: autoSuggest
+      parameters:
+        - name: q
+          in: query
+          description: 'q, does a full text search'
+          schema:
+            type: string
+          example: 'ut,kiosk,jrvs'
+        - name: type
+          in: query
+          description: Multi valued array (comma separated list)
+          schema:
+            type: array
+            items:
+              type: string
+          example: 'poi,station-taxi,stationfacility,greenwheels,address,city,stop'
+        - name: 'type[]'
+          in: query
+          description: 'Multi valued array for iOS, equivalent with type'
+          schema:
+            type: array
+            items:
+              type: string
+        - name: session_token
+          in: query
+          description: 'A session token, used to group the query and selection phases of a user autocomplete search into a discrete session for billing purposes'
+          schema:
+            type: string
+        - name: x-api-key
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of available places; Representation contains payload of type List<Place>
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                $ref: '#/components/schemas/RepresentationListPlace'
+        '400':
+          description: List of available places; Representation contains payload of type List<Place>
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                $ref: '#/components/schemas/RepresentationListPlace'
+        '500':
+          description: List of available places; Representation contains payload of type List<Place>
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                $ref: '#/components/schemas/RepresentationListPlace'
+  /v1/scooter-details:
+    get:
+      tags:
+        - Scooter
+      summary: getScooterDetails
+      operationId: getScooterDetails
+      parameters:
+        - name: id
+          in: query
+          description: Scooter id url encoded
+          required: true
+          schema:
+            type: string
+          example: '%23mcp%3AV%3Acheck%3A7413a8a8-6562-4f71-a06b-5960a086861f'
+        - name: Accept-Language
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                $ref: '#/components/schemas/NearbyMeGetScooterDetailsResponse'
+              example:
+                id: string
+                name: string
+                lat: 0
+                lng: 0
+                thumbnail:
+                  uri: string
+                distance: 0
+                address: string
+                batteryInfo:
+                  text: string
+                  level: EMPTY
+                  iconId: string
+                button:
+                  weblink:
+                    uri: string
+                  deepLink:
+                    uri: string
+                  buttonText: string
+  /v3/nearbyme:
+    get:
+      tags:
+        - NearbyMeLocation
+      summary: Get nearby me locations v3
+      description: Get nearby me locations v3
+      operationId: locationsNearbyMeV3
+      parameters:
+        - name: minLat
+          in: query
+          description: 'Latitude of the south-west coordinate of the map. '
+          required: true
+          schema:
+            type: number
+            format: double
+          example: 52.089319
+        - name: minLng
+          in: query
+          description: Longitude of the south-west coordinate of the map.
+          required: true
+          schema:
+            type: number
+            format: double
+          example: 5.110169
+        - name: maxLat
+          in: query
+          description: 'Latitude of the north-east coordinate of the map. '
+          required: true
+          schema:
+            type: number
+            format: double
+          example: 52.089319
+        - name: maxLng
+          in: query
+          description: Longitude of the north-east coordinate of the map.
+          required: true
+          schema:
+            type: number
+            format: double
+          example: 5.110169
+        - name: zoomLevel
+          in: query
+          description: Zoomlevel of the map for which data should be returned. See https://developers.google.com/maps/documentation/android-sdk/views#zoom
+          schema:
+            type: integer
+            format: int32
+            default: 6
+          example: 6
+        - name: limit
+          in: query
+          description: Limit the number of results returned
+          schema:
+            type: integer
+            format: int32
+            default: 200
+          example: 50
+        - name: filterTypes
+          in: query
+          description: 'StationaryFilter (except OV), NearbyMeLocationType (only SHARED_BIKE, SHARED_CAR and SHARED_SCOOTER), SharedModalityProvider (e.g. DOTT, CHECK), or VariationEnum (e.g. ELECTRIC) that should be applied in the search.'
+          schema:
+            type: array
+            items:
+              type: string
+            default: '[ ]'
+          example: 'STATION,BUS,SHARED_BIKE,DOTT,ELECTRIC,OV_FIETS'
+        - name: disabledModalities
+          in: query
+          description: 'DisabledModalities that could be applied in the search. If identical to filterTypes <should not be possible>, both will be ignored and all types returned'
+          schema:
+            type: array
+            items:
+              type: string
+            default: '[ ]'
+          example: 'DLS, DEF'
+        - name: appVersionCapabilities
+          in: query
+          description: List of supported combinations of modality type and provider
+          schema:
+            type: array
+            items:
+              type: string
+            default: '[ ]'
+          example: 'DLF-Dott,DLS-Check,DLA-GreenWheels'
+        - name: enableSubfilters
+          in: query
+          description: Feature switch to enable top level filters with subfilters
+          schema:
+            type: boolean
+        - name: Accept-Language
+          in: header
+          schema:
+            type: string
+            default: nl
+        - name: X-MmVehicleExtra
+          in: header
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                $ref: '#/components/schemas/NearbyMeGetLocationsResponseV3'
+              example:
+                locations:
+                  - id:
+                      value: string
+                      type: string
+                    lat: 0
+                    lng: 0
+                    name: string
+                    category: STATION
+                    provider: string
+                    type: BUS
+                    subType: CAR_COMPACT
+                    distance: 0
+                    description:
+                      full: string
+                      minimal: string
+                      subDescription: string
+                    routeShortNames:
+                      - string
+                    platform:
+                      code: string
+                      label: string
+                    batteryInfo:
+                      text: string
+                      level: EMPTY
+                      iconId: string
+                      iconColor: string
+                      percentage: string
+                    modalityProviderMarkerInfo:
+                      baseUrl: string
+                    sharedModalityBottomSheetExtraInfo:
+                      header: string
+                      content: string
+                messages:
+                  - priority: 0
+                    value: string
+                    type: Success
+  /v2/nearbyme:
+    get:
+      tags:
+        - NearbyMeLocation
+      summary: Get nearby me locations v2
+      description: Get nearby me locations v2
+      operationId: locationsNearbyMeV2
+      parameters:
+        - name: minLat
+          in: query
+          description: 'Latitude of the south-west coordinate of the map. '
+          required: true
+          schema:
+            type: number
+            format: double
+          example: 52.089319
+        - name: minLng
+          in: query
+          description: Longitude of the south-west coordinate of the map.
+          required: true
+          schema:
+            type: number
+            format: double
+          example: 5.110169
+        - name: maxLat
+          in: query
+          description: 'Latitude of the north-east coordinate of the map. '
+          required: true
+          schema:
+            type: number
+            format: double
+          example: 52.089319
+        - name: maxLng
+          in: query
+          description: Longitude of the north-east coordinate of the map.
+          required: true
+          schema:
+            type: number
+            format: double
+          example: 5.110169
+        - name: zoomLevel
+          in: query
+          description: Zoomlevel of the map for which data should be returned. See https://developers.google.com/maps/documentation/android-sdk/views#zoom
+          schema:
+            type: integer
+            format: int32
+            default: 6
+          example: 6
+        - name: limit
+          in: query
+          description: Limit the number of results returned
+          schema:
+            type: integer
+            format: int32
+            default: 200
+          example: 50
+        - name: filterTypes
+          in: query
+          description: 'StationaryFilter (except OV), NearbyMeLocationType (only SHARED_BIKE, SHARED_CAR and SHARED_SCOOTER), SharedModalityProvider (e.g. DOTT, CHECK), or VariationEnum (e.g. ELECTRIC) that should be applied in the search.'
+          schema:
+            type: array
+            items:
+              type: string
+            default: '[ ]'
+          example: 'STATION,BUS,SHARED_BIKE,DOTT,ELECTRIC,OV_FIETS'
+        - name: disabledModalities
+          in: query
+          description: 'DisabledModalities that could be applied in the search. If identical to filterTypes <should not be possible>, both will be ignored and all types returned'
+          schema:
+            type: array
+            items:
+              type: string
+            default: '[ ]'
+          example: 'DLS, DEF'
+        - name: appVersionCapabilities
+          in: query
+          description: List of supported combinations of modality type and provider
+          schema:
+            type: array
+            items:
+              type: string
+            default: '[ ]'
+          example: 'DLF-Dott,DLS-Check,DLA-GreenWheels'
+        - name: enableSubfilters
+          in: query
+          description: Feature switch to enable top level filters with subfilters
+          schema:
+            type: boolean
+        - name: Accept-Language
+          in: header
+          schema:
+            type: string
+            default: nl
+        - name: X-MmVehicleExtra
+          in: header
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                $ref: '#/components/schemas/NearbyMeGetLocationsResponseV2'
+              example:
+                locations:
+                  - id:
+                      value: string
+                      type: string
+                    lat: 0
+                    lng: 0
+                    name: string
+                    category: STATION
+                    provider: string
+                    type: BUS
+                    subType: FREE_STREET_PARKING
+                    distance: 0
+                    routeShortNames:
+                      - string
+                    platform:
+                      code: string
+                      label: string
+                    batteryInfo:
+                      text: string
+                      level: EMPTY
+                      iconId: string
+                      iconColor: string
+                      percentage: string
+                    modalityProviderMarkerInfo:
+                      baseUrl: string
+                    sharedModalityBottomSheetExtraInfo:
+                      header: string
+                      content: string
+                messages:
+                  - priority: 0
+                    value: string
+                    type: Success
+  /v4/nearbyme:
+    get:
+      tags:
+        - NearbyMeLocation
+      summary: Get nearby me locations v4
+      description: Get nearby me locations v4
+      operationId: locationsNearbyMeV4
+      parameters:
+        - name: minLat
+          in: query
+          description: 'Latitude of the south-west coordinate of the map. '
+          required: true
+          schema:
+            type: number
+            format: double
+          example: 52.089319
+        - name: minLng
+          in: query
+          description: Longitude of the south-west coordinate of the map.
+          required: true
+          schema:
+            type: number
+            format: double
+          example: 5.110169
+        - name: maxLat
+          in: query
+          description: 'Latitude of the north-east coordinate of the map. '
+          required: true
+          schema:
+            type: number
+            format: double
+          example: 52.089319
+        - name: maxLng
+          in: query
+          description: Longitude of the north-east coordinate of the map.
+          required: true
+          schema:
+            type: number
+            format: double
+          example: 5.110169
+        - name: zoomLevel
+          in: query
+          description: Zoomlevel of the map for which data should be returned. See https://developers.google.com/maps/documentation/android-sdk/views#zoom
+          schema:
+            type: integer
+            format: int32
+            default: 6
+          example: 6
+        - name: limit
+          in: query
+          description: Limit the number of results returned
+          schema:
+            type: integer
+            format: int32
+            default: 200
+          example: 50
+        - name: filterTypes
+          in: query
+          description: 'StationaryFilter (except OV), NearbyMeLocationType (only SHARED_BIKE, SHARED_CAR and SHARED_SCOOTER), SharedModalityProvider (e.g. DOTT, CHECK), or VariationEnum (e.g. ELECTRIC) that should be applied in the search.'
+          schema:
+            type: array
+            items:
+              type: string
+            default: '[ ]'
+          example: 'STATION,BUS,SHARED_BIKE,DOTT,ELECTRIC,OV_FIETS'
+        - name: disabledModalities
+          in: query
+          description: 'DisabledModalities that could be applied in the search. If identical to filterTypes <should not be possible>, both will be ignored and all types returned'
+          schema:
+            type: array
+            items:
+              type: string
+            default: '[ ]'
+          example: 'DLS, DEF'
+        - name: appVersionCapabilities
+          in: query
+          description: List of supported combinations of modality type and provider
+          schema:
+            type: array
+            items:
+              type: string
+            default: '[ ]'
+          example: 'DLF-Dott,DLS-Check,DLA-GreenWheels'
+        - name: enableSubfilters
+          in: query
+          description: Feature switch to enable top level filters with subfilters
+          schema:
+            type: boolean
+        - name: Accept-Language
+          in: header
+          schema:
+            type: string
+            default: nl
+        - name: X-MmVehicleExtra
+          in: header
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                $ref: '#/components/schemas/NearbyMeGetLocationsResponseV4'
+              example:
+                locations:
+                  - id:
+                      value: string
+                      type: string
+                    lat: 0
+                    lng: 0
+                    title: string
+                    subTitle: string
+                    markerLabel: string
+                    thirdRow: string
+                    category: STATION
+                    provider: string
+                    type: BUS
+                    subType: CAR_COMPACT
+                    distance: 0
+                    routeShortNames:
+                      - string
+                    platform:
+                      code: string
+                      label: string
+                    batteryInfo:
+                      text: string
+                      level: EMPTY
+                      iconId: string
+                      iconColor: string
+                      percentage: string
+                    modalityProviderMarkerInfo:
+                      baseUrl: string
+                    bottomSheetExtraInfo:
+                      header: string
+                      content: string
+                messages:
+                  - priority: 0
+                    value: string
+                    type: Success
+  /v5/modality-details:
+    get:
+      tags:
+        - ModalityDetails
+      summary: Get modality details v5
+      description: Get modality details v5
+      operationId: getModalityDetailsV5
+      parameters:
+        - name: id
+          in: query
+          description: Modality id url encoded
+          required: true
+          schema:
+            type: string
+          example: '%23mcp%3AV%3Acheck%3A7413a8a8-6562-4f71-a06b-5960a086861f'
+        - name: type
+          in: query
+          description: Modality type
+          required: true
+          schema:
+            type: string
+          example: DLS
+        - name: Accept-Language
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Card-Type
+          in: header
+          description: Type of payment method card. Only required when sessionId needs to be propagated in deeplink to Check.
+          schema:
+            enum:
+              - SCID
+              - CNTRCTID
+              - MAID
+            type: string
+        - name: X-Card-Number
+          in: header
+          description: "Identifier of payment method card. Only required when sessionId needs to be propagated in deeplink to Check.\n\nCNTRCTID -> provide the Flex card engraved ID\n\nSCID -> provide the Business card contract ID\n\nMAID -> provide the OVPas Master Agreement ID\n"
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                $ref: '#/components/schemas/NearbyMeGetSharedModalityDetailsResponseV5'
+              example:
+                id: string
+                type: BUS
+                subType: CAR_COMPACT
+                subtitle: string
+                title: string
+                providerImageUrl: string
+                providerLogoUrl: string
+                vehicleName: string
+                address: string
+                batteryInfo:
+                  text: string
+                  level: EMPTY
+                  iconId: string
+                  iconColor: string
+                  percentage: string
+                  distanceLeftInKilometers: string
+                imageInfo:
+                  baseUrl: string
+                priceDetails:
+                  - string
+                specifications:
+                  - description: string
+                    icon: string
+                    color: string
+                button:
+                  buttonText: string
+                  weblink: string
+                  variant: string
+                  iconLeading: string
+                  paymentMethodsActionData:
+                    provider: string
+                    modalityId: string
+                    bookingContext: string
+                  hrefActionData:
+                    iosUrl: string
+                    androidUrl: string
+                    webUrl: string
+                infoLinks:
+                  - icon: string
+                    title: string
+                    url: string
+                    webUrl: string
+                    type: DEEPLINK
+                    analyticsValues:
+                      - key: string
+                        value: string
+                storeUrls:
+                  googlePlayStoreUrl: string
+                  appleStoreUrl: string
+                bookingInfo:
+                  bookingContext: string
+                  provider: string
+                  modalityId: string
+                actionButtons:
+                  - text: string
+                    buttonType: string
+                    leadingIcon: string
+                    actionType: REVEAL
+                    analyticsValues:
+                      - key: string
+                        value: string
+                bottomSheetExtraInfo:
+                  header: string
+                  content: string
+  /v4/modality-details:
+    get:
+      tags:
+        - ModalityDetails
+      summary: Get modality details v4
+      description: Get modality details v4
+      operationId: getModalityDetailsV4
+      parameters:
+        - name: id
+          in: query
+          description: Modality id url encoded
+          required: true
+          schema:
+            type: string
+          example: '%23mcp%3AV%3Acheck%3A7413a8a8-6562-4f71-a06b-5960a086861f'
+        - name: type
+          in: query
+          description: Modality type
+          required: true
+          schema:
+            type: string
+          example: DLS
+        - name: Accept-Language
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                $ref: '#/components/schemas/NearbyMeGetSharedModalityDetailsResponseV4'
+              example:
+                id: string
+                type: BUS
+                subType: CAR_COMPACT
+                description: string
+                providerName: string
+                providerImageUrl: string
+                providerLogoUrl: string
+                name: string
+                address: string
+                batteryInfo:
+                  text: string
+                  level: EMPTY
+                  iconId: string
+                  iconColor: string
+                  percentage: string
+                  distanceLeftInKilometers: string
+                imageInfo:
+                  baseUrl: string
+                priceDetails:
+                  - string
+                specifications:
+                  - description: string
+                    icon: string
+                    color: string
+                button:
+                  buttonText: string
+                  weblink: string
+                  variant: string
+                  iconLeading: string
+                  paymentMethodsActionData:
+                    provider: string
+                    modalityId: string
+                    bookingContext: string
+                  hrefActionData:
+                    iosUrl: string
+                    androidUrl: string
+                    webUrl: string
+                infoLinks:
+                  - icon: string
+                    title: string
+                    url: string
+                    webUrl: string
+                    type: DEEPLINK
+                    analyticsValues:
+                      - key: string
+                        value: string
+                storeUrls:
+                  googlePlayStoreUrl: string
+                  appleStoreUrl: string
+                bookingInfo:
+                  bookingContext: string
+                  provider: string
+                  modalityId: string
+                actionButtons:
+                  - text: string
+                    buttonType: string
+                    leadingIcon: string
+                    actionType: REVEAL
+                    analyticsValues:
+                      - key: string
+                        value: string
+                bottomSheetExtraInfo:
+                  header: string
+                  content: string
+  /v3/modality-details:
+    get:
+      tags:
+        - ModalityDetails
+      summary: Get modality details v3
+      description: Get modality details v3
+      operationId: getModalityDetailsV3
+      parameters:
+        - name: id
+          in: query
+          description: Modality id url encoded
+          required: true
+          schema:
+            type: string
+          example: '%23mcp%3AV%3Acheck%3A7413a8a8-6562-4f71-a06b-5960a086861f'
+        - name: type
+          in: query
+          description: Modality type
+          required: true
+          schema:
+            type: string
+          example: DLS
+        - name: Accept-Language
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                $ref: '#/components/schemas/NearbyMeGetSharedModalityDetailsResponseV3'
+              example:
+                id: string
+                type: BUS
+                subType: FREE_STREET_PARKING
+                description: string
+                providerName: string
+                providerImageUrl: string
+                providerLogoUrl: string
+                name: string
+                address: string
+                batteryInfo:
+                  text: string
+                  level: EMPTY
+                  iconId: string
+                  iconColor: string
+                  percentage: string
+                  distanceLeftInKilometers: string
+                imageInfo:
+                  baseUrl: string
+                priceDetails:
+                  - string
+                specifications:
+                  - description: string
+                    icon: string
+                    color: string
+                button:
+                  buttonText: string
+                  weblink: string
+                  variant: string
+                  iconLeading: string
+                  paymentMethodsActionData:
+                    provider: string
+                    modalityId: string
+                    bookingContext: string
+                  hrefActionData:
+                    iosUrl: string
+                    androidUrl: string
+                    webUrl: string
+                infoLinks:
+                  - icon: string
+                    title: string
+                    url: string
+                    webUrl: string
+                    type: DEEPLINK
+                    analyticsValues:
+                      - key: string
+                        value: string
+                storeUrls:
+                  googlePlayStoreUrl: string
+                  appleStoreUrl: string
+                bookingInfo:
+                  bookingContext: string
+                  provider: string
+                  modalityId: string
+                actionButtons:
+                  - text: string
+                    buttonType: string
+                    leadingIcon: string
+                    actionType: REVEAL
+                    analyticsValues:
+                      - key: string
+                        value: string
+                bottomSheetExtraInfo:
+                  header: string
+                  content: string
+  /v2/places:
+    get:
+      tags:
+        - Places
+      summary: List places
+      description: Use the query parameters to limit the number of places
+      operationId: getPlaces
+      parameters:
+        - name: lat
+          in: query
+          description: 'latitude, to be used with parameter lng'
+          schema:
+            type: string
+          example: 52.089319
+        - name: lng
+          in: query
+          description: 'longitude, to be used with parameter lat'
+          schema:
+            type: string
+          example: 5.110169
+        - name: type
+          in: query
+          description: Multi valued array
+          schema:
+            type: array
+            items:
+              type: string
+          example: 'poi,station-taxi,stationfacility,greenwheels,address,city,stop'
+        - name: 'type[]'
+          in: query
+          description: 'Multi valued array for iOS, equivalent to type'
+          schema:
+            type: array
+            items:
+              type: string
+        - name: orderby
+          in: query
+          description: 'Multi valued array, specify the order in which results are returned. If stations are requested, those always have priority'
+          schema:
+            type: array
+            items:
+              type: string
+          example: 'poi,station-taxi,stationfacility,greenwheels,address,city,stop'
+        - name: limit
+          in: query
+          description: Limit the number of results returned
+          schema:
+            type: integer
+            format: int32
+            default: 150
+          example: 25
+        - name: radius
+          in: query
+          description: 'Radius in meters, to be used in conjunction with lat and lng'
+          schema:
+            type: integer
+            format: int32
+            default: 1000
+          example: 2500
+        - name: lang
+          in: query
+          description: The language the response should be in
+          schema:
+            type: string
+            default: nl
+          example: 'nl,en'
+        - name: q
+          in: query
+          description: 'q, does a full text search'
+          schema:
+            type: string
+          example: 'ut,kiosk,jrvs'
+        - name: screen-density
+          in: query
+          description: 'preferred screen density. Images are optimized for a screen resolution. Usually 1.0 is non-retina, 2.0 is double=retina'
+          schema:
+            type: string
+            default: ios-2.0
+          example: 'ios-1.0,ios-2.0,ios-3.0,mdpi,hdpi,xhdpi,xxhdpi,xxxhdpi'
+        - name: details
+          in: query
+          description: Whether or not to include details in the result
+          schema:
+            type: boolean
+            default: false
+        - name: station_code
+          in: query
+          description: Returns results which are linked to a Station based on the station code
+          schema:
+            type: string
+          example: 'UT,SHL,GVC'
+        - name: name
+          in: query
+          description: Search by name does not use a fuzzy or full text search
+          schema:
+            type: string
+          example: City
+        - name: view
+          in: query
+          description: 'Search for a pre-defined types. E.g. ovfiets returns results with type=stationfacility, but only OV-fiets identifiers'
+          schema:
+            type: string
+          example: stationinfo
+        - name: platforms
+          in: query
+          description: A comma seperated list. Limit the search to a specific platform. (e.g. some results include links to android apps which should not be shown on iOS)
+          schema:
+            type: array
+            items:
+              type: string
+          example: 'ios,android'
+        - name: identifier
+          in: query
+          description: Multi valued array with identifiers. Can be excluded by prefixing with minus (e.g. -ovfiets)
+          schema:
+            type: array
+            items:
+              type: string
+            default: '[ ]'
+        - name: moment
+          in: query
+          description: 'Set a date and time which determines if Places and locations are Open or Closed at that moment. Format is in ISO8601 format, when omitted date and time is set to Today, NOW'
+          schema:
+            type: string
+          example: '2016-07-05T13:42:24.0000000+00:00'
+        - name: countries
+          in: query
+          description: Comma separated list of country codes to filter stations.
+          schema:
+            type: string
+        - name: X-session-token
+          in: header
+          description: 'A session token, used to group the query and selection phases of a user autocomplete search into a discrete session for billing purposes'
+          schema:
+            type: string
+        - name: Accept-Language
+          in: header
+          description: The language the response should be in
+          schema:
+            type: string
+            default: nl
+          example: 'nl,en'
+      responses:
+        '400':
+          description: 'limit should be bigger than 0 or moment could not be parsed, parameter is in ISO8601 format'
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                $ref: '#/components/schemas/RepresentationListPlace'
+        '200':
+          description: List of available places; Representation contains payload of type List<Place>
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                $ref: '#/components/schemas/RepresentationListPlace'
+        '500':
+          description: List of available places; Representation contains payload of type List<Place>
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                $ref: '#/components/schemas/RepresentationListPlace'
+  '/v2/places/{type}/{id}':
+    get:
+      tags:
+        - Places
+      summary: Get place for type
+      description: Return a place based on id and type
+      operationId: getPlacesForType
+      parameters:
+        - name: type
+          in: path
+          description: The type of Place
+          required: true
+          schema:
+            type: string
+          example: 'poi,station-taxi,stationfacility,greenwheels,address,city,stop'
+        - name: id
+          in: path
+          description: The id of the place object
+          required: true
+          schema:
+            type: string
+          example: ChIJ2QUls2lrxkcRI4_mKWufkOM
+      responses:
+        '404':
+          description: No place found of type for id
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                $ref: '#/components/schemas/RepresentationLocation'
+        '200':
+          description: List of available places based on id and type; Representation contains payload of type Location
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                $ref: '#/components/schemas/RepresentationLocation'
+        '500':
+          description: List of available places based on id and type; Representation contains payload of type Location
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                $ref: '#/components/schemas/RepresentationLocation'
+  '/v2/places/{type}/resource/{resource}':
+    get:
+      tags:
+        - Places
+      summary: Get image by type and resource
+      description: Returns an image of a place based on type and resource name
+      operationId: getImageForTypeAndResource
+      parameters:
+        - name: type
+          in: path
+          description: The type of Place
+          required: true
+          schema:
+            type: string
+          example: 'poi,station-taxi,stationfacility,greenwheels,address,stop'
+        - name: resource
+          in: path
+          description: Resource name
+          required: true
+          schema:
+            type: string
+          example: img-2.0-logo_20260202.png
+        - name: blur
+          in: query
+          description: Blur the image
+          schema:
+            type: number
+            format: float
+            default: 0
+          example: 0.5
+      responses:
+        '404':
+          description: No image found of type for id
+          content:
+            image/*:
+              schema:
+                type: string
+                format: byte
+              examples:
+                default:
+                  value: 
+        '200':
+          description: Image of a place based on type and resource name; contains ByteArray
+          content:
+            image/*:
+              schema:
+                type: string
+                format: byte
+              examples:
+                default:
+                  value: 
+        '500':
+          description: Image of a place based on type and resource name; contains ByteArray
+          content:
+            image/*:
+              schema:
+                type: string
+                format: byte
+              examples:
+                default:
+                  value: 
+  /v2/ovfiets:
+    get:
+      tags:
+        - OV-fiets
+      summary: OV-fiets availability
+      description: Retrieve a list of OV-fiets places and availability. Use the query parameters to limit the number of places
+      operationId: getOvFietsAvailability
+      parameters:
+        - name: station_code
+          in: query
+          description: Returns results which are linked to a Station based on the station code
+          schema:
+            type: string
+          example: ut
+      responses:
+        '200':
+          description: List of available OV-fiets places; Representation contains payload of type List<Place>
+          content:
+            application/json;version=2:
+              schema:
+                $ref: '#/components/schemas/RepresentationListPlace'
+        '400':
+          description: List of available OV-fiets places; Representation contains payload of type List<Place>
+          content:
+            application/json;version=2:
+              schema:
+                $ref: '#/components/schemas/RepresentationListPlace'
+        '500':
+          description: List of available OV-fiets places; Representation contains payload of type List<Place>
+          content:
+            application/json;version=2:
+              schema:
+                $ref: '#/components/schemas/RepresentationListPlace'
+  /v3/nearbyme/filters:
+    get:
+      tags:
+        - NearbyMeFilters
+      summary: Get nearby me filters v3
+      description: Returns all filter groups and their respective sub-filters
+      operationId: getNearByMeFiltersV3
+      parameters:
+        - name: appVersionCapabilities
+          in: query
+          description: List of supported modalityType-Provider combinations
+          schema:
+            type: array
+            items:
+              type: string
+            default: '[ ]'
+          example: 'DEF-Dott,DLS-Check,DLA-GreenWheels,PRK-MoveYou'
+        - name: Accept-Language
+          in: header
+          schema:
+            type: string
+            default: nl
+      responses:
+        '200':
+          description: Successful response with filter groups
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                $ref: '#/components/schemas/NearbyMeGetFiltersResponseV3'
+              example:
+                filterGroups:
+                  - displayName: NS
+                    groupType: NS
+                    subFilters:
+                      - displayName: Trein
+                        filterType: STATION
+                        icon: train
+                        groupType: NS
+  /v2/nearbyme/filters:
+    get:
+      tags:
+        - NearbyMeFilters
+      summary: Get nearby me filters v2
+      description: Get nearby me filters v2
+      operationId: getNearByMeFiltersV2
+      parameters:
+        - name: disabledModalities
+          in: query
+          description: Enum like list of SharedModality ids that should be excluded from the results
+          schema:
+            type: array
+            items:
+              type: string
+            default: '[ ]'
+          example: 'DLF,DLS,DLA,DEF'
+        - name: appVersionCapabilities
+          in: query
+          description: List of supported combinations of modality type and provider
+          schema:
+            type: array
+            items:
+              type: string
+            default: '[ ]'
+          example: 'DLF-Dott,DLS-Check,DLA-GreenWheels'
+        - name: Accept-Language
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NearbyMeGetFiltersResponseV2'
+              example:
+                - name: string
+                  filterName: string
+                  subFilters:
+                    - subFilterName: string
+                      subFilterType: OV
+                      filterValues:
+                        - name: string
+                          filterName: string
+                          filterIcon: string
+  /v2/modality-details:
+    get:
+      tags:
+        - ModalityDetails
+      summary: Get modality details v2
+      description: Get modality details v2
+      operationId: getModalityDetailsV2
+      parameters:
+        - name: id
+          in: query
+          description: Modality id url encoded
+          required: true
+          schema:
+            type: string
+          example: '%23mcp%3AV%3Acheck%3A7413a8a8-6562-4f71-a06b-5960a086861f'
+        - name: type
+          in: query
+          description: Modality type
+          required: true
+          schema:
+            type: string
+          example: DLS
+        - name: Accept-Language
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                $ref: '#/components/schemas/NearbyMeGetSharedModalityDetailsResponseV2'
+              example:
+                id: string
+                description: string
+                providerName: string
+                providerImageUrl: string
+                providerLogoUrl: string
+                name: string
+                address: string
+                batteryInfo:
+                  text: string
+                  level: EMPTY
+                  iconId: string
+                  iconColor: string
+                  percentage: string
+                  distanceLeftInKilometers: string
+                priceDetails:
+                  - string
+                specifications:
+                  - description: string
+                    icon: string
+                    color: string
+                button:
+                  buttonText: string
+                  weblink: string
+                  variant: string
+                  iconLeading: string
+                  paymentMethodsActionData:
+                    provider: string
+                    modalityId: string
+                    bookingContext: string
+                  hrefActionData:
+                    iosUrl: string
+                    androidUrl: string
+                    webUrl: string
+                infoLinks:
+                  - icon: string
+                    title: string
+                    url: string
+                    webUrl: string
+                    type: DEEPLINK
+                    analyticsValues:
+                      - key: string
+                        value: string
+                storeUrls:
+                  googlePlayStoreUrl: string
+                  appleStoreUrl: string
+                bookingInfo:
+                  bookingContext: string
+                  provider: string
+                  modalityId: string
+  /v2/modality-details/fromQrCode:
+    get:
+      tags:
+        - ModalityDetails
+      summary: Get modality details from QR code
+      description: Get modality details from QR code
+      operationId: getModalityDetailsFromUrl
+      parameters:
+        - name: lat
+          in: query
+          description: The lat of the user location
+          required: true
+          schema:
+            type: number
+            format: double
+          example: 52.089319
+        - name: lng
+          in: query
+          description: The long of the user location
+          required: true
+          schema:
+            type: number
+            format: double
+          example: 5.110169
+        - name: qrCodeText
+          in: query
+          description: The text of the QR code scanned in URL encoded format
+          required: true
+          schema:
+            type: string
+          example: https%3A%2F%2Fv.ridedott.com%2FCB607082
+        - name: Accept-Language
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                $ref: '#/components/schemas/NearbyMeGetSharedModalityDetailsFromQrCodeResponse'
+              example:
+                sharedModality:
+                  id: string
+                  description: string
+                  providerName: string
+                  providerImageUrl: string
+                  providerLogoUrl: string
+                  name: string
+                  address: string
+                  batteryInfo:
+                    text: string
+                    level: EMPTY
+                    iconId: string
+                    iconColor: string
+                    percentage: string
+                    distanceLeftInKilometers: string
+                  priceDetails:
+                    - string
+                  specifications:
+                    - description: string
+                      icon: string
+                      color: string
+                  button:
+                    buttonText: string
+                    weblink: string
+                    variant: string
+                    iconLeading: string
+                    paymentMethodsActionData:
+                      provider: string
+                      modalityId: string
+                      bookingContext: string
+                    hrefActionData:
+                      iosUrl: string
+                      androidUrl: string
+                      webUrl: string
+                  infoLinks:
+                    - icon: string
+                      title: string
+                      url: string
+                      webUrl: string
+                      type: DEEPLINK
+                      analyticsValues:
+                        - key: string
+                          value: string
+                  storeUrls:
+                    googlePlayStoreUrl: string
+                    appleStoreUrl: string
+                  bookingInfo:
+                    bookingContext: string
+                    provider: string
+                    modalityId: string
+                errorMessage:
+                  title: string
+                  text: string
+                  cause: UNAVAILABLE
+                  consequence: RETRY
+  /v1/nearbyme:
+    get:
+      tags:
+        - NearbyMeLocation
+      summary: Get nearby me locations v1
+      description: Get nearby me locations v1
+      operationId: locationsNearbyMeV1
+      parameters:
+        - name: minLat
+          in: query
+          description: 'Latitude of the south-west coordinate of the map. '
+          required: true
+          schema:
+            type: number
+            format: double
+          example: 52.089319
+        - name: minLng
+          in: query
+          description: Longitude of the south-west coordinate of the map.
+          required: true
+          schema:
+            type: number
+            format: double
+          example: 5.110169
+        - name: maxLat
+          in: query
+          description: 'Latitude of the north-east coordinate of the map. '
+          required: true
+          schema:
+            type: number
+            format: double
+          example: 52.089319
+        - name: maxLng
+          in: query
+          description: Longitude of the north-east coordinate of the map.
+          required: true
+          schema:
+            type: number
+            format: double
+          example: 5.110169
+        - name: zoomLevel
+          in: query
+          description: Zoomlevel of the map for which data should be returned. See https://developers.google.com/maps/documentation/android-sdk/views#zoom
+          schema:
+            type: integer
+            format: int32
+            default: 6
+          example: 6
+        - name: limit
+          in: query
+          description: Limit the number of results returned
+          schema:
+            type: integer
+            format: int32
+            default: 200
+          example: 50
+        - name: filters
+          in: query
+          description: 'The ids of the filters that should be applied in the search. The ids correspond with locationTypes like stations, bus stops, etc.'
+          schema:
+            type: array
+            items:
+              type: integer
+              format: int32
+            default: '[ ]'
+          example: 123
+        - name: filterTypes
+          in: query
+          description: 'NearbyMeLocationTypes that should be applied in the search. If present, will take precedence over filters.'
+          schema:
+            type: array
+            items:
+              type: string
+            default: '[ ]'
+          example: 'STATION,BUS,SHARED_BIKE'
+        - name: disabledModalities
+          in: query
+          description: 'DisabledModalities that could be applied in the search. If identical to filters <should not be possible>, both will be ignored and all types returned'
+          schema:
+            type: array
+            items:
+              type: string
+            default: '[ ]'
+          example: 'DLS, DEF'
+        - name: Accept-Language
+          in: header
+          schema:
+            type: string
+            default: nl
+        - name: X-MmVehicleExtra
+          in: header
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NearbyMeGetLocationsResponseV1'
+              example:
+                - id:
+                    value: string
+                    type: string
+                  lat: 0
+                  lng: 0
+                  name: string
+                  description: string
+                  shortDescription: string
+                  type: STATION
+                  mixedType: MIXED_BUS_TRAM
+                  distance: 0
+                  numAvailable: 0
+                  address: string
+                  routeShortNames:
+                    - string
+                  platform:
+                    code: string
+                    label: string
+  /v1/nearbyme/filters:
+    get:
+      tags:
+        - NearbyMeFilters
+      summary: Get nearby me filters v1
+      description: Get nearby me filters v1
+      operationId: getNearByMeFiltersV1
+      parameters:
+        - name: disabledModalities
+          in: query
+          description: Enum like list of SharedModality ids that should be excluded from the results
+          schema:
+            type: array
+            items:
+              type: string
+            default: '[ ]'
+          example: 'DLF,DLS,DLA,DEF'
+        - name: appVersionCapabilities
+          in: query
+          description: List of supported combinations of modality type and provider
+          schema:
+            type: array
+            items:
+              type: string
+            default: '[ ]'
+          example: 'DLF-Dott,DLS-Check,DLA-GreenWheels'
+        - name: Accept-Language
+          in: header
+          schema:
+            type: string
+        - name: X-MmVehicleExtra
+          in: header
+          schema:
+            type: boolean
+            default: false
+        - name: Authorization
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NearbyMeGetFiltersResponseV1'
+              example:
+                - id: 0
+                  name: string
+                  filterName: string
+                  filterType: string
+                  providers:
+                    - id: 0
+                      name: string
+                      filterName: string
+                  subFilters:
+                    - subFilterName: string
+                      subFilterType: OV
+                      filterValues:
+                        - name: string
+                          filterName: string
+                          filterIcon: string
+  /v1/modality-details:
+    get:
+      tags:
+        - ModalityDetails
+      summary: Get modality details v1
+      description: Get modality details v1
+      operationId: getModalityDetailsV1
+      parameters:
+        - name: id
+          in: query
+          description: Modality id url encoded
+          required: true
+          schema:
+            type: string
+          example: '%23mcp%3AV%3Acheck%3A7413a8a8-6562-4f71-a06b-5960a086861f'
+        - name: Accept-Language
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                $ref: '#/components/schemas/NearbyMeGetSharedModalityDetailsResponseV1'
+              example:
+                id: string
+                description: string
+                type: STATION
+                variation: REGULAR
+                provider: CHECK
+                providerName: string
+                providerImageUrl: string
+                providerLogoUrl: string
+                name: string
+                address: string
+                batteryInfo:
+                  text: string
+                  level: EMPTY
+                  iconId: string
+                  iconColor: string
+                  percentage: string
+                  distanceLeftInKilometers: string
+                priceDetails:
+                  - string
+                specifications:
+                  - description: string
+                    icon: string
+                    color: string
+                button:
+                  buttonText: string
+                  weblink: string
+                  variant: string
+                  iconLeading: string
+                  paymentMethodsActionData:
+                    provider: string
+                    modalityId: string
+                    bookingContext: string
+                  hrefActionData:
+                    iosUrl: string
+                    androidUrl: string
+                    webUrl: string
+                storeUrls:
+                  googlePlayStoreUrl: string
+                  appleStoreUrl: string
+                bookingInfo:
+                  bookingContext: string
+                  provider: string
+                  modalityId: string
+                bookingContext: string
+  /v5/nearbyme:
+    get:
+      tags:
+        - NearbyMeLocation
+      summary: Get nearby me locations v5
+      description: Get nearby me locations v5
+      operationId: locationsNearbyMeV5
+      parameters:
+        - name: minLat
+          in: query
+          description: Latitude of the south-west coordinate of the map.
+          required: true
+          schema:
+            type: number
+            format: double
+          example: 52.089319
+        - name: minLng
+          in: query
+          description: Longitude of the south-west coordinate of the map.
+          required: true
+          schema:
+            type: number
+            format: double
+          example: 5.110169
+        - name: maxLat
+          in: query
+          description: Latitude of the north-east coordinate of the map.
+          required: true
+          schema:
+            type: number
+            format: double
+          example: 52.089319
+        - name: maxLng
+          in: query
+          description: Longitude of the north-east coordinate of the map.
+          required: true
+          schema:
+            type: number
+            format: double
+          example: 5.110169
+        - name: zoomLevel
+          in: query
+          description: Zoom level of the map for which data should be returned. See https://developers.google.com/maps/documentation/android-sdk/views#zoom
+          schema:
+            type: integer
+            format: int32
+            default: 6
+          example: 6
+        - name: limit
+          in: query
+          description: Maximum number of results to be returned for this request.
+          schema:
+            type: integer
+            format: int32
+            default: 200
+          example: 50
+        - name: subFilterTypes
+          in: query
+          description: List of NearbyMeSubFilterTypeV3 values that should be applied in the search to only return locations of the specified subTypes.
+          schema:
+            type: array
+            items:
+              type: string
+            default: '[ ]'
+          example: 'STATION,OV_FIETS,PARK_AND_RIDE,BUS,TRAM,METRO,FERRY,SHARED_BIKE,SHARED_ELECTRICAL_BIKE,SHARED_CAR,SHARED_SCOOTER,SHARED_CAR_PARK_STREET,SHARED_CAR_PARK_GARAGE'
+        - name: appVersionCapabilities
+          in: query
+          description: List of modalityType-provider combinations supported by the frontend. The list of enabled modalities (defined by the Modality API) has priority over this list.
+          schema:
+            type: array
+            items:
+              type: string
+            default: '[ ]'
+          example: 'DEF-Dott,DLS-Check,DLA-GreenWheels,PRK-MoveYou'
+        - name: Accept-Language
+          in: header
+          schema:
+            type: string
+            default: nl
+          example: en
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                $ref: '#/components/schemas/NearbyMeGetLocationsResponseV5'
+              example:
+                locations:
+                  - id:
+                      value: string
+                      type: string
+                    lat: 0
+                    lng: 0
+                    title: string
+                    subTitle: string
+                    thirdRow: string
+                    markerLabel: string
+                    category: STATION
+                    provider: string
+                    type: STATION
+                    subType: CAR_COMPACT
+                    distance: 0
+                    routeShortNames:
+                      - string
+                    platform:
+                      code: string
+                      label: string
+                    batteryInfo:
+                      text: string
+                      level: EMPTY
+                      iconId: string
+                      iconColor: string
+                      percentage: string
+                    modalityProviderMarkerInfo:
+                      baseUrl: string
+                    sharedModalityBottomSheetExtraInfo:
+                      header: string
+                      content: string
+                messages:
+                  - priority: 0
+                    value: string
+                    type: Success
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+  /v1/stationfacility/lifts:
+    get:
+      tags:
+        - StationFacilityLocation
+      summary: Get stationfacility lift locations v1
+      description: Returns a list of lifts at NS stations and their status. Query parameters can be used to filter results as needed.
+      operationId: getStationFacilityLifts
+      parameters:
+        - name: status
+          in: query
+          description: Availability status of lift locations to be in the response
+          schema:
+            enum:
+              - Yes
+              - No
+              - Unknown
+            type: string
+            nullable: true
+        - name: stationCode
+          in: query
+          description: NS station code of lift locations to be in the response
+          schema:
+            type: string
+            nullable: true
+            example: UT
+        - name: limit
+          in: query
+          description: Maximum number of locations to be returned for this request
+          schema:
+            type: integer
+            format: int32
+            default: 500
+          example: 50
+        - name: Accept-Language
+          in: header
+          schema:
+            enum:
+              - nl
+              - en
+            type: string
+            default: nl
+      responses:
+        '200':
+          description: List of lift stationfacility locations according to the query parameters.
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StationFacilityLocationResponseV1'
+              example:
+                - id: NL:CHB:LiftEquipment:8400280_001
+                  type: stationfacility
+                  identifier: lift
+                  name: Lift Spoor 5/7
+                  stationCode: UT
+                  lat: 52.2249141
+                  lng: 5.110169
+                  open: Yes
+                  statusLabel: Beschikbaar
+                  platform: '2026-05-07'
+        '400':
+          description: List of lift stationfacility locations according to the query parameters.
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StationFacilityLocationResponseV1'
+              example:
+                - id: NL:CHB:LiftEquipment:8400280_001
+                  type: stationfacility
+                  identifier: lift
+                  name: Lift Spoor 5/7
+                  stationCode: UT
+                  lat: 52.2249141
+                  lng: 5.110169
+                  open: Yes
+                  statusLabel: Beschikbaar
+                  platform: '2026-05-07'
+        '500':
+          description: List of lift stationfacility locations according to the query parameters.
+          content:
+            application/json;charset=UTF-8:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StationFacilityLocationResponseV1'
+              example:
+                - id: NL:CHB:LiftEquipment:8400280_001
+                  type: stationfacility
+                  identifier: lift
+                  name: Lift Spoor 5/7
+                  stationCode: UT
+                  lat: 52.2249141
+                  lng: 5.110169
+                  open: Yes
+                  statusLabel: Beschikbaar
+                  platform: '2026-05-07'
+components:
+  schemas:
+    HrefActionDataResponse:
+      required:
+        - androidUrl
+        - iosUrl
+        - webUrl
+      type: object
+      properties:
+        iosUrl:
+          type: string
+        androidUrl:
+          type: string
+        webUrl:
+          type: string
+    ImageInfoResponse:
+      required:
+        - baseUrl
+      type: object
+      properties:
+        baseUrl:
+          type: string
+    InfoLink:
+      required:
+        - analyticsValues
+        - icon
+        - title
+        - type
+        - url
+      type: object
+      properties:
+        icon:
+          type: string
+        title:
+          type: string
+        url:
+          type: string
+        webUrl:
+          type: string
+        type:
+          enum:
+            - DEEPLINK
+          type: string
+        analyticsValues:
+          type: array
+          items:
+            $ref: '#/components/schemas/InfoLinkAnalyticsValue'
+    InfoLinkAnalyticsValue:
+      required:
+        - key
+        - value
+      type: object
+      properties:
+        key:
+          type: string
+        value:
+          type: string
+    NearbyMeGetSharedModalityDetailsResponseV5:
+      required:
+        - id
+        - type
+        - providerImageUrl
+        - providerLogoUrl
+        - vehicleName
+        - imageInfo
+        - priceDetails
+        - specifications
+        - button
+        - bookingInfo
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          enum:
+            - BUS
+            - FERRY
+            - METRO
+            - MIXED_BUS_TRAM
+            - MIXED_OTHER
+            - OV_FIETS
+            - PARK_AND_RIDE
+            - SCOOTER
+            - SHARED_BIKE
+            - SHARED_CAR
+            - SHARED_CAR_PARK
+            - SHARED_ELECTRICAL_BIKE
+            - SHARED_SCOOTER
+            - STATION
+            - TRAM
+            - UNKNOWN
+          type: string
+        subType:
+          enum:
+            - CAR_COMPACT
+            - CAR_MIDSIZE
+            - CAR_VAN
+            - CAR_ELECTRIC
+            - UNKNOWN_CAR
+            - FREE_STREET_PARKING
+            - FREE_PARKING_GARAGE
+            - PAID_STREET_PARKING
+            - PAID_PARKING_GARAGE
+            - UNKNOWN_PARKING
+          type: string
+        subtitle:
+          type: string
+        title:
+          type: string
+        providerImageUrl:
+          type: string
+        providerLogoUrl:
+          type: string
+        vehicleName:
+          type: string
+        address:
+          type: string
+        batteryInfo:
+          $ref: '#/components/schemas/SharedModalityBatteryInfoResponse'
+        imageInfo:
+          $ref: '#/components/schemas/ImageInfoResponse'
+        priceDetails:
+          type: array
+          items:
+            type: string
+        specifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/SharedModalitySpecificationResponse'
+        button:
+          $ref: '#/components/schemas/SharedModalityButtonResponse'
+        infoLinks:
+          type: array
+          items:
+            $ref: '#/components/schemas/InfoLink'
+        storeUrls:
+          $ref: '#/components/schemas/SharedModalityStoreUrlsResponse'
+        bookingInfo:
+          $ref: '#/components/schemas/SharedModalityBookingInfoResponse'
+        actionButtons:
+          type: array
+          items:
+            $ref: '#/components/schemas/SharedModalityActionButtonResponse'
+        bottomSheetExtraInfo:
+          $ref: '#/components/schemas/BottomSheetExtraInfoResponse'
+    NearbyMeGetSharedModalityDetailsResponseV4:
+      required:
+        - id
+        - type
+        - providerImageUrl
+        - providerLogoUrl
+        - name
+        - imageInfo
+        - priceDetails
+        - specifications
+        - button
+        - bookingInfo
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          enum:
+            - BUS
+            - FERRY
+            - METRO
+            - MIXED_BUS_TRAM
+            - MIXED_OTHER
+            - OV_FIETS
+            - PARK_AND_RIDE
+            - SCOOTER
+            - SHARED_BIKE
+            - SHARED_CAR
+            - SHARED_CAR_PARK
+            - SHARED_ELECTRICAL_BIKE
+            - SHARED_SCOOTER
+            - STATION
+            - TRAM
+            - UNKNOWN
+          type: string
+        subType:
+          enum:
+            - CAR_COMPACT
+            - CAR_MIDSIZE
+            - CAR_VAN
+            - CAR_ELECTRIC
+            - UNKNOWN_CAR
+            - FREE_STREET_PARKING
+            - FREE_PARKING_GARAGE
+            - PAID_STREET_PARKING
+            - PAID_PARKING_GARAGE
+            - UNKNOWN_PARKING
+          type: string
+        description:
+          type: string
+        providerName:
+          type: string
+        providerImageUrl:
+          type: string
+        providerLogoUrl:
+          type: string
+        name:
+          type: string
+        address:
+          type: string
+        batteryInfo:
+          $ref: '#/components/schemas/SharedModalityBatteryInfoResponse'
+        imageInfo:
+          $ref: '#/components/schemas/ImageInfoResponse'
+        priceDetails:
+          type: array
+          items:
+            type: string
+        specifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/SharedModalitySpecificationResponse'
+        button:
+          $ref: '#/components/schemas/SharedModalityButtonResponse'
+        infoLinks:
+          type: array
+          items:
+            $ref: '#/components/schemas/InfoLink'
+        storeUrls:
+          $ref: '#/components/schemas/SharedModalityStoreUrlsResponse'
+        bookingInfo:
+          $ref: '#/components/schemas/SharedModalityBookingInfoResponse'
+        actionButtons:
+          type: array
+          items:
+            $ref: '#/components/schemas/SharedModalityActionButtonResponse'
+        bottomSheetExtraInfo:
+          $ref: '#/components/schemas/BottomSheetExtraInfoResponse'
+    NearbyMeGetSharedModalityDetailsResponseV3:
+      required:
+        - id
+        - type
+        - providerImageUrl
+        - providerLogoUrl
+        - name
+        - imageInfo
+        - priceDetails
+        - specifications
+        - button
+        - bookingInfo
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          enum:
+            - BUS
+            - FERRY
+            - METRO
+            - MIXED_BUS_TRAM
+            - MIXED_OTHER
+            - OV_FIETS
+            - PARK_AND_RIDE
+            - SCOOTER
+            - SHARED_BIKE
+            - SHARED_CAR
+            - SHARED_CAR_PARK
+            - SHARED_ELECTRICAL_BIKE
+            - SHARED_SCOOTER
+            - STATION
+            - TRAM
+            - UNKNOWN
+          type: string
+        subType:
+          enum:
+            - FREE_STREET_PARKING
+            - FREE_PARKING_GARAGE
+            - PAID_STREET_PARKING
+            - PAID_PARKING_GARAGE
+            - UNKNOWN_PARKING
+          type: string
+        description:
+          type: string
+        providerName:
+          type: string
+        providerImageUrl:
+          type: string
+        providerLogoUrl:
+          type: string
+        name:
+          type: string
+        address:
+          type: string
+        batteryInfo:
+          $ref: '#/components/schemas/SharedModalityBatteryInfoResponse'
+        imageInfo:
+          $ref: '#/components/schemas/ImageInfoResponse'
+        priceDetails:
+          type: array
+          items:
+            type: string
+        specifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/SharedModalitySpecificationResponse'
+        button:
+          $ref: '#/components/schemas/SharedModalityButtonResponse'
+        infoLinks:
+          type: array
+          items:
+            $ref: '#/components/schemas/InfoLink'
+        storeUrls:
+          $ref: '#/components/schemas/SharedModalityStoreUrlsResponse'
+        bookingInfo:
+          $ref: '#/components/schemas/SharedModalityBookingInfoResponse'
+        actionButtons:
+          type: array
+          items:
+            $ref: '#/components/schemas/SharedModalityActionButtonResponse'
+        bottomSheetExtraInfo:
+          $ref: '#/components/schemas/BottomSheetExtraInfoResponse'
+    PaymentMethodsActionDataResponse:
+      required:
+        - bookingContext
+        - modalityId
+        - provider
+      type: object
+      properties:
+        provider:
+          type: string
+        modalityId:
+          type: string
+        bookingContext:
+          type: string
+    SharedModalityActionButtonResponse:
+      required:
+        - actionType
+        - analyticsValues
+        - buttonType
+        - leadingIcon
+        - text
+      type: object
+      properties:
+        text:
+          type: string
+        buttonType:
+          type: string
+        leadingIcon:
+          type: string
+        actionType:
+          enum:
+            - REVEAL
+          type: string
+        analyticsValues:
+          type: array
+          items:
+            $ref: '#/components/schemas/InfoLinkAnalyticsValue'
+    SharedModalityBatteryInfoResponse:
+      required:
+        - iconId
+        - level
+        - text
+      type: object
+      properties:
+        text:
+          type: string
+        level:
+          enum:
+            - EMPTY
+            - ALMOST_EMPTY
+            - LESS_THAN_HALF
+            - MORE_THAN_HALF
+            - ALMOST_FULL
+            - UNKNOWN
+          type: string
+        iconId:
+          type: string
+        iconColor:
+          type: string
+        percentage:
+          type: string
+        distanceLeftInKilometers:
+          type: string
+    SharedModalityBookingInfoResponse:
+      required:
+        - modalityId
+        - provider
+      type: object
+      properties:
+        bookingContext:
+          type: string
+        provider:
+          type: string
+        modalityId:
+          type: string
+    SharedModalityBottomSheetExtraInfoResponse:
+      type: object
+      properties:
+        header:
+          type: string
+        content:
+          type: string
+    SharedModalityButtonResponse:
+      required:
+        - buttonText
+        - variant
+        - weblink
+      type: object
+      properties:
+        buttonText:
+          type: string
+        weblink:
+          type: string
+        variant:
+          type: string
+        iconLeading:
+          type: string
+        paymentMethodsActionData:
+          $ref: '#/components/schemas/PaymentMethodsActionDataResponse'
+        hrefActionData:
+          $ref: '#/components/schemas/HrefActionDataResponse'
+    SharedModalitySpecificationResponse:
+      required:
+        - color
+        - description
+        - icon
+      type: object
+      properties:
+        description:
+          type: string
+        icon:
+          type: string
+        color:
+          type: string
+    SharedModalityStoreUrlsResponse:
+      required:
+        - appleStoreUrl
+        - googlePlayStoreUrl
+      type: object
+      properties:
+        googlePlayStoreUrl:
+          type: string
+        appleStoreUrl:
+          type: string
+    BottomSheetExtraInfoResponse:
+      required:
+        - header
+        - content
+      type: object
+      properties:
+        header:
+          type: string
+        content:
+          type: string
+    App:
+      type: object
+      properties:
+        name:
+          type: string
+        listLogoImage:
+          $ref: '#/components/schemas/Link'
+        links:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/AppLink'
+        categories:
+          type: array
+          items:
+            type: string
+        listLogoImages:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResolutionAndFile'
+      description: Available apps for this location
+    AppLink:
+      type: object
+      properties:
+        key:
+          type: string
+        url:
+          type: string
+    ExtraInfo:
+      type: object
+      properties:
+        text:
+          type: string
+      description: 'Optional, extra information for this specific location'
+    GeoLocation:
+      type: object
+      properties:
+        lat:
+          type: number
+          format: double
+        lon:
+          type: number
+          format: double
+      description: 'used internally by the places API, please use top level lat, lng'
+    Link:
+      required:
+        - uri
+      type: object
+      properties:
+        uri:
+          type: string
+      description: Image which can be used as header image. This is usually a larger full color/resolution image.
+    Location:
+      type: object
+      properties:
+        placeId:
+          type: string
+          description: Unique identifier of the location
+          example: ChIJ2QUls2lrxkcRI4_mKWufkOM
+        distance:
+          type: number
+          description: 'Distance to requested coordination (lat, lng)'
+          format: double
+          example: 3.1470404590777
+        name:
+          type: string
+          description: Name of the location
+          example: 'Sumo, Mauritsweg, Rotterdam'
+        stationCode:
+          type: string
+          description: 'To which station this location belongs, optional'
+          example: UT
+        lat:
+          type: number
+          description: Latitude
+          format: double
+          example: 52.2249141
+        lng:
+          type: number
+          description: longitude
+          format: double
+          example: 5.1776998
+        radius:
+          type: number
+          description: Radius
+          format: double
+        destinationPage:
+          type: boolean
+          description: Contains a destination page
+        location:
+          $ref: '#/components/schemas/GeoLocation'
+        open:
+          enum:
+            - Yes
+            - No
+            - Unknown
+          type: string
+          description: Whether the location is open
+        link:
+          $ref: '#/components/schemas/Link'
+        thumbnail:
+          $ref: '#/components/schemas/Link'
+        infoUrl:
+          type: string
+          description: Link to an external page with info about this location
+        description:
+          type: string
+          description: Description
+        openingHours:
+          type: array
+          items:
+            $ref: '#/components/schemas/OpeningHour'
+          description: Opening hours for the week
+        extra:
+          type: object
+          additionalProperties:
+            type: string
+            description: 'Extra untyped information, e.g. amount of OV-fiets available'
+          description: 'Extra untyped information, e.g. amount of OV-fiets available'
+        infoImages:
+          type: array
+          items:
+            $ref: '#/components/schemas/RichImage'
+          description: Information images
+        apps:
+          type: array
+          items:
+            $ref: '#/components/schemas/App'
+          description: Available apps for this location
+        sites:
+          type: array
+          items:
+            $ref: '#/components/schemas/Site'
+          description: Available sites for this location
+        extraInfo:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExtraInfo'
+          description: 'Optional, extra information for this specific location'
+        incompleteRemarks:
+          type: string
+          description: Incomplete remarks
+        infoLinks:
+          type: array
+          items:
+            $ref: '#/components/schemas/InfoLink'
+          description: Info links
+        ovFiets:
+          type: boolean
+        elasticSearchGeolocationToNull:
+          $ref: '#/components/schemas/Location'
+        nearbyMeLocationId:
+          $ref: '#/components/schemas/LocationId'
+        nextOpeningTime:
+          type: string
+          description: The next opening time of facility
+        street:
+          type: string
+        houseNumber:
+          type: string
+        postalCode:
+          type: string
+        city:
+          type: string
+        sapId:
+          type: string
+          description: 'Combination of SAP identifiers in the following format [SAP_RE_BedrijfsNr]/[SAP_RE_Complex]/[SAP_RE_HuurObjNr]'
+      description: 'Represents a single location with usually a lat, lng. A place can have multiple locations.'
+    LocationId:
+      type: object
+      properties:
+        value:
+          type: string
+        type:
+          type: string
+      description: Location id
+    OpeningHour:
+      type: object
+      properties:
+        dayOfWeek:
+          type: integer
+          format: int32
+        startTime:
+          type: string
+          description: The time when this location will open
+          example: '13:00'
+        endTime:
+          type: string
+          description: 'The time when it is closed, note! when the end time is bigger then the start time, it closes the next day during the night'
+          example: '01:00'
+        closesNextDay:
+          type: boolean
+      description: Represents the OpeningHour of a single day
+    Place:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/Type'
+        name:
+          type: string
+          description: Name
+          example: Sumo
+        stationFacilityType:
+          $ref: '#/components/schemas/StationFacilityType'
+        nearbyMeMarkerIconName:
+          type: string
+          description: NearbyMe marker icon name
+          example: 'aed, lockers, waiting-room'
+        identifiers:
+          type: array
+          items:
+            enum:
+              - address
+              - city
+              - command
+              - station-retail
+              - fietsenstalling
+              - greenwheels
+              - image
+              - onbekend
+              - ovfiets
+              - park_ride_free
+              - park_ride_paid
+              - poi
+              - stationfacility
+              - stationinfoBlacklist
+              - stationinfoMissing
+              - stationV2
+              - station-taxi
+              - status
+              - stop
+              - userstop
+              - zonetaxi
+            type: string
+        description:
+          type: string
+          description: Description of the place
+          example: 'Sumo, Mauritsweg, Rotterdam'
+        categories:
+          type: array
+          items:
+            type: string
+            description: List of categories to which a place belongs
+            example: 'shop,facility'
+          description: List of categories to which a place belongs
+          example: 'shop,facility'
+        locations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Location'
+          description: List locations for this place
+        listLogoImage:
+          $ref: '#/components/schemas/Link'
+        primaryColor:
+          type: string
+          description: 'The primary color for this place, value is in hex #ffffff'
+          example: '#f1f2f3'
+        secondaryColor:
+          type: string
+          description: 'The secondary color for this place, value is in hex #ffffff'
+          example: '#f1f2f3'
+        backgroundColor:
+          type: string
+          description: 'The background color for this place, value is in hex #ffffff'
+          example: '#f1f2f3'
+        open:
+          enum:
+            - Yes
+            - No
+            - Unknown
+          type: string
+          description: 'Whether one of the locations is open, this is an aggregate of all Locations'
+        openingHours:
+          type: array
+          items:
+            $ref: '#/components/schemas/OpeningHour'
+          description: Opening hours for the week
+        keywords:
+          type: array
+          items:
+            type: string
+            description: List of keywords
+            example: 'Koffie,Winkel'
+          description: List of keywords
+          example: 'Koffie,Winkel'
+        stationBound:
+          type: boolean
+          description: is this place part of a station
+        headerImage:
+          $ref: '#/components/schemas/Link'
+        advertImages:
+          type: array
+          items:
+            $ref: '#/components/schemas/RichImage'
+          description: Links to advert images
+        infoImages:
+          type: array
+          items:
+            $ref: '#/components/schemas/RichImage'
+          description: Links to info images
+        incompleteRemarks:
+          type: string
+          writeOnly: true
+        nextOpeningTime:
+          type: string
+          description: The next opening time of facility
+    RepresentationListPlace:
+      type: object
+      properties:
+        self:
+          $ref: '#/components/schemas/Link'
+        links:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Link'
+        payload:
+          type: array
+          items:
+            $ref: '#/components/schemas/Place'
+        meta:
+          type: object
+          additionalProperties:
+            type: object
+      description: 'A Representation containing an optional link to self, the payload, optional links and optional meta data.'
+    Resolution:
+      required:
+        - identifiers
+      type: object
+      properties:
+        identifiers:
+          type: array
+          items:
+            type: string
+    ResolutionAndFile:
+      required:
+        - deleted
+        - file
+        - originalFilename
+        - referenceCounter
+        - resolution
+      type: object
+      properties:
+        resolution:
+          $ref: '#/components/schemas/Resolution'
+        file:
+          type: string
+          format: binary
+        originalFilename:
+          type: string
+        referenceCounter:
+          type: integer
+          format: int32
+        deleted:
+          type: boolean
+    RichImage:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the image
+        link:
+          $ref: '#/components/schemas/Link'
+        qualifier:
+          enum:
+            - landscape
+            - portrait
+            - square
+          type: string
+          description: The type of image
+          example: landscape
+        title:
+          type: string
+          description: The title
+        subtitle:
+          type: string
+          description: The subtitle which usually is below the title
+        body:
+          type: string
+          description: Body text
+        buttonText:
+          type: string
+          description: Text to be placed on a call to action button
+        buttonLink:
+          type: string
+          description: Link that should be opened when a user presses the call to action button
+        language:
+          type: string
+          description: Which language this image is in
+      description: Links to info images
+    Site:
+      type: object
+      properties:
+        url:
+          type: string
+        qualifier:
+          type: string
+      description: Available sites for this location
+    StationFacilityType:
+      enum:
+        - FOOD_AND_DRINK
+        - SHOP
+        - SERVICE
+        - ASSISTANCE
+      type: string
+      description: The type of a station facility. Not used (null) for other types of places.
+      example: SHOP
+    Type:
+      enum:
+        - poi
+        - station-taxi
+        - stationfacility
+        - station-retail
+        - greenwheels
+        - command
+        - status
+        - address
+        - city
+        - stop
+        - userstop
+        - image
+        - stationV2
+        - onbekend
+      type: string
+      description: Type
+      example: poi
+    RepresentationLocation:
+      type: object
+      properties:
+        self:
+          $ref: '#/components/schemas/Link'
+        links:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Link'
+        payload:
+          $ref: '#/components/schemas/Location'
+        meta:
+          type: object
+          additionalProperties:
+            type: object
+      description: 'A Representation containing an optional link to self, the payload, optional links and optional meta data.'
+    StationFacilityLocationResponseV1:
+      required:
+        - id
+        - type
+        - identifier
+        - name
+        - stationCode
+        - open
+        - statusLabel
+      type: object
+      properties:
+        id:
+          type: string
+          description: Lift ID from Epiap XML
+          example: NL:CHB:LiftEquipment:8400280_001
+        type:
+          type: string
+          description: Lifts have Type='stationfacility'
+          example: stationfacility
+        identifier:
+          type: string
+          description: Lifts have Identifier='lift'
+          example: lift
+        name:
+          type: string
+          description: 'Descriptive, unique, human-readable lift name'
+          example: Lift Spoor 5/7
+        stationCode:
+          type: string
+          description: NS station code of lift location
+          example: UT
+        lat:
+          type: number
+          description: Latitude coordinate of lift
+          format: double
+          example: 52.2249141
+        lng:
+          type: number
+          description: Longitude coordinate of lift
+          format: double
+          example: 5.110169
+        open:
+          enum:
+            - Yes
+            - No
+            - Unknown
+          type: string
+          description: Current availability status of lift
+        statusLabel:
+          enum:
+            - Beschikbaar
+            - Available
+            - Buiten werking
+            - Out of order
+            - Status onbekend
+            - Unknown
+          type: string
+          description: 'Language specific, human-readable label describing status of lift'
+          example: Beschikbaar
+        platform:
+          type: string
+          description: 'When applicable, number of NS platform where lift is located'
+          example: '5/7'
+      description: Response describing a Lift stationfacility location
+    DescriptionResponse:
+      required:
+        - full
+        - minimal
+      type: object
+      properties:
+        full:
+          type: string
+        minimal:
+          type: string
+        subDescription:
+          type: string
+    ModalityProviderMarkerInfoResponse:
+      required:
+        - baseUrl
+      type: object
+      properties:
+        baseUrl:
+          type: string
+    NearbyMeBottomSheetExtraInfoResponse:
+      required:
+        - header
+        - content
+      type: object
+      properties:
+        header:
+          type: string
+        content:
+          type: string
+    NearByMeLocationBatteryInfoResponse:
+      required:
+        - iconId
+        - level
+        - text
+      type: object
+      properties:
+        text:
+          type: string
+        level:
+          enum:
+            - EMPTY
+            - ALMOST_EMPTY
+            - LESS_THAN_HALF
+            - MORE_THAN_HALF
+            - ALMOST_FULL
+            - UNKNOWN
+          type: string
+        iconId:
+          type: string
+        iconColor:
+          type: string
+        percentage:
+          type: string
+    NearbyMeGetLocationsResponseV5:
+      required:
+        - locations
+        - messages
+      type: object
+      properties:
+        locations:
+          type: array
+          items:
+            $ref: '#/components/schemas/NearbyMeLocationResponseV5'
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/NearbyMeMessageResponse'
+    NearbyMeGetLocationsResponseV4:
+      required:
+        - locations
+        - messages
+      type: object
+      properties:
+        locations:
+          type: array
+          items:
+            $ref: '#/components/schemas/NearbyMeLocationResponseV4'
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/NearbyMeMessageResponse'
+    NearbyMeGetLocationsResponseV3:
+      required:
+        - locations
+        - messages
+      type: object
+      properties:
+        locations:
+          type: array
+          items:
+            $ref: '#/components/schemas/NearbyMeLocationResponseV3'
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/NearbyMeMessageResponse'
+    NearbyMeGetLocationsResponseV2:
+      required:
+        - locations
+        - messages
+      type: object
+      properties:
+        locations:
+          type: array
+          items:
+            $ref: '#/components/schemas/NearbyMeLocationResponseV2'
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/NearbyMeMessageResponse'
+    NearbyMeLocationIdResponse:
+      required:
+        - type
+        - value
+      type: object
+      properties:
+        value:
+          type: string
+        type:
+          type: string
+    NearbyMeLocationResponseV5:
+      required:
+        - id
+        - lat
+        - lng
+        - title
+        - category
+        - type
+        - modalityProviderMarkerInfo
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/NearbyMeLocationIdResponse'
+        lat:
+          type: number
+          format: double
+        lng:
+          type: number
+          format: double
+        title:
+          type: string
+        subTitle:
+          type: string
+        thirdRow:
+          type: string
+          description: Extra information besides title and subtitle
+        markerLabel:
+          type: string
+        category:
+          enum:
+            - STATION
+            - USER_STOP
+            - OV_FIETS
+            - PARK_AND_RIDE
+            - SHARED_MODALITY
+            - UNKNOWN
+          type: string
+        provider:
+          type: string
+        type:
+          enum:
+            - STATION
+            - OV_FIETS
+            - PARK_AND_RIDE
+            - BUS
+            - TRAM
+            - MIXED_BUS_TRAM
+            - MIXED_OTHER
+            - METRO
+            - FERRY
+            - SHARED_CAR
+            - SHARED_SCOOTER
+            - SHARED_ELECTRICAL_BIKE
+            - SHARED_CAR_PARK
+            - UNKNOWN
+          type: string
+        subType:
+          enum:
+            - CAR_COMPACT
+            - CAR_MIDSIZE
+            - CAR_VAN
+            - CAR_ELECTRIC
+            - UNKNOWN_CAR
+            - FREE_STREET_PARKING
+            - FREE_PARKING_GARAGE
+            - PAID_STREET_PARKING
+            - PAID_PARKING_GARAGE
+            - UNKNOWN_PARKING
+          type: string
+        distance:
+          type: number
+          format: double
+        routeShortNames:
+          type: array
+          items:
+            type: string
+        platform:
+          $ref: '#/components/schemas/PlatformResponse'
+        batteryInfo:
+          $ref: '#/components/schemas/NearByMeLocationBatteryInfoResponse'
+        modalityProviderMarkerInfo:
+          $ref: '#/components/schemas/ModalityProviderMarkerInfoResponse'
+        sharedModalityBottomSheetExtraInfo:
+          $ref: '#/components/schemas/NearbyMeBottomSheetExtraInfoResponse'
+    NearbyMeLocationResponseV4:
+      required:
+        - id
+        - lat
+        - lng
+        - title
+        - category
+        - type
+        - modalityProviderMarkerInfo
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/NearbyMeLocationIdResponse'
+        lat:
+          type: number
+          format: double
+        lng:
+          type: number
+          format: double
+        title:
+          type: string
+        subTitle:
+          type: string
+        markerLabel:
+          type: string
+        thirdRow:
+          type: string
+          description: Extra information besides title and subtitle
+        category:
+          enum:
+            - STATION
+            - USER_STOP
+            - OV_FIETS
+            - PARK_AND_RIDE
+            - SHARED_MODALITY
+            - UNKNOWN
+          type: string
+        provider:
+          type: string
+        type:
+          enum:
+            - BUS
+            - FERRY
+            - METRO
+            - MIXED_BUS_TRAM
+            - MIXED_OTHER
+            - OV_FIETS
+            - PARK_AND_RIDE
+            - SCOOTER
+            - SHARED_BIKE
+            - SHARED_CAR
+            - SHARED_CAR_PARK
+            - SHARED_ELECTRICAL_BIKE
+            - SHARED_SCOOTER
+            - STATION
+            - TRAM
+            - UNKNOWN
+          type: string
+        subType:
+          enum:
+            - CAR_COMPACT
+            - CAR_MIDSIZE
+            - CAR_VAN
+            - CAR_ELECTRIC
+            - UNKNOWN_CAR
+            - FREE_STREET_PARKING
+            - FREE_PARKING_GARAGE
+            - PAID_STREET_PARKING
+            - PAID_PARKING_GARAGE
+            - UNKNOWN_PARKING
+          type: string
+        distance:
+          type: number
+          format: double
+        routeShortNames:
+          type: array
+          items:
+            type: string
+        platform:
+          $ref: '#/components/schemas/PlatformResponse'
+        batteryInfo:
+          $ref: '#/components/schemas/NearByMeLocationBatteryInfoResponse'
+        modalityProviderMarkerInfo:
+          $ref: '#/components/schemas/ModalityProviderMarkerInfoResponse'
+        bottomSheetExtraInfo:
+          $ref: '#/components/schemas/NearbyMeBottomSheetExtraInfoResponse'
+    NearbyMeLocationResponseV3:
+      required:
+        - id
+        - lat
+        - lng
+        - name
+        - category
+        - type
+        - modalityProviderMarkerInfo
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/NearbyMeLocationIdResponse'
+        lat:
+          type: number
+          format: double
+        lng:
+          type: number
+          format: double
+        name:
+          type: string
+        category:
+          enum:
+            - STATION
+            - USER_STOP
+            - OV_FIETS
+            - PARK_AND_RIDE
+            - SHARED_MODALITY
+            - UNKNOWN
+          type: string
+        provider:
+          type: string
+        type:
+          enum:
+            - BUS
+            - FERRY
+            - METRO
+            - MIXED_BUS_TRAM
+            - MIXED_OTHER
+            - OV_FIETS
+            - PARK_AND_RIDE
+            - SCOOTER
+            - SHARED_BIKE
+            - SHARED_CAR
+            - SHARED_CAR_PARK
+            - SHARED_ELECTRICAL_BIKE
+            - SHARED_SCOOTER
+            - STATION
+            - TRAM
+            - UNKNOWN
+          type: string
+        subType:
+          enum:
+            - CAR_COMPACT
+            - CAR_MIDSIZE
+            - CAR_VAN
+            - CAR_ELECTRIC
+            - UNKNOWN_CAR
+            - FREE_STREET_PARKING
+            - FREE_PARKING_GARAGE
+            - PAID_STREET_PARKING
+            - PAID_PARKING_GARAGE
+            - UNKNOWN_PARKING
+          type: string
+        distance:
+          type: number
+          format: double
+        description:
+          $ref: '#/components/schemas/DescriptionResponse'
+        routeShortNames:
+          type: array
+          items:
+            type: string
+        platform:
+          $ref: '#/components/schemas/PlatformResponse'
+        batteryInfo:
+          $ref: '#/components/schemas/NearByMeLocationBatteryInfoResponse'
+        modalityProviderMarkerInfo:
+          $ref: '#/components/schemas/ModalityProviderMarkerInfoResponse'
+        sharedModalityBottomSheetExtraInfo:
+          $ref: '#/components/schemas/NearbyMeBottomSheetExtraInfoResponse'
+    NearbyMeLocationResponseV2:
+      required:
+        - id
+        - lat
+        - lng
+        - name
+        - category
+        - type
+        - modalityProviderMarkerInfo
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/NearbyMeLocationIdResponse'
+        lat:
+          type: number
+          format: double
+        lng:
+          type: number
+          format: double
+        name:
+          type: string
+        category:
+          enum:
+            - STATION
+            - USER_STOP
+            - OV_FIETS
+            - PARK_AND_RIDE
+            - SHARED_MODALITY
+            - UNKNOWN
+          type: string
+        provider:
+          type: string
+        type:
+          enum:
+            - BUS
+            - FERRY
+            - METRO
+            - MIXED_BUS_TRAM
+            - MIXED_OTHER
+            - OV_FIETS
+            - PARK_AND_RIDE
+            - SCOOTER
+            - SHARED_BIKE
+            - SHARED_CAR
+            - SHARED_CAR_PARK
+            - SHARED_ELECTRICAL_BIKE
+            - SHARED_SCOOTER
+            - STATION
+            - TRAM
+            - UNKNOWN
+          type: string
+        subType:
+          enum:
+            - FREE_STREET_PARKING
+            - FREE_PARKING_GARAGE
+            - PAID_STREET_PARKING
+            - PAID_PARKING_GARAGE
+            - UNKNOWN_PARKING
+          type: string
+        distance:
+          type: number
+          format: double
+        routeShortNames:
+          type: array
+          items:
+            type: string
+        platform:
+          $ref: '#/components/schemas/PlatformResponse'
+        batteryInfo:
+          $ref: '#/components/schemas/NearByMeLocationBatteryInfoResponse'
+        modalityProviderMarkerInfo:
+          $ref: '#/components/schemas/ModalityProviderMarkerInfoResponse'
+        sharedModalityBottomSheetExtraInfo:
+          $ref: '#/components/schemas/NearbyMeBottomSheetExtraInfoResponse'
+    NearbyMeMessageResponse:
+      required:
+        - priority
+        - type
+        - value
+      type: object
+      properties:
+        priority:
+          type: integer
+          format: int32
+        value:
+          type: string
+        type:
+          enum:
+            - Success
+            - Informative
+            - Warning
+            - Error
+          type: string
+    PlatformResponse:
+      required:
+        - code
+        - label
+      type: object
+      properties:
+        code:
+          type: string
+        label:
+          type: string
+    OpeningHourResponse:
+      required:
+        - day
+        - endTime
+        - startTime
+      type: object
+      properties:
+        day:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: string
+    NearbyMeGetFiltersResponseV3:
+      required:
+        - filterGroups
+      type: object
+      properties:
+        filterGroups:
+          type: array
+          items:
+            $ref: '#/components/schemas/NearbyMeFilterGroupResponse'
+    NearbyMeFilterGroupResponse:
+      required:
+        - displayName
+        - groupType
+      type: object
+      properties:
+        displayName:
+          type: string
+          example: NS
+        groupType:
+          enum:
+            - NS
+            - OV
+            - SHARED_MODALITY
+            - SHARED_PARKING
+          type: string
+        subFilters:
+          type: array
+          items:
+            $ref: '#/components/schemas/NearbyMeSubFilterResponseV3'
+    NearbyMeSubFilterResponseV3:
+      required:
+        - displayName
+        - filterType
+        - icon
+        - groupType
+      type: object
+      properties:
+        displayName:
+          type: string
+          example: Trein
+        filterType:
+          enum:
+            - STATION
+            - OV_FIETS
+            - PARK_AND_RIDE
+            - BUS
+            - TRAM
+            - METRO
+            - FERRY
+            - SHARED_BIKE
+            - SHARED_ELECTRICAL_BIKE
+            - SHARED_SCOOTER
+            - SHARED_CAR
+            - SHARED_CAR_PARK_STREET
+            - SHARED_CAR_PARK_GARAGE
+          type: string
+          example: STATION
+        icon:
+          type: string
+          example: train
+        groupType:
+          enum:
+            - NS
+            - OV
+            - SHARED_MODALITY
+            - SHARED_PARKING
+          type: string
+          example: NS
+    NearbyMeGetFiltersResponseV2:
+      required:
+        - filterName
+        - name
+      type: object
+      properties:
+        name:
+          type: string
+        filterName:
+          type: string
+        subFilters:
+          type: array
+          items:
+            $ref: '#/components/schemas/NearbyMeSubFilterResponse'
+    NearbyMeSubFilterResponse:
+      required:
+        - filterValues
+        - subFilterName
+        - subFilterType
+      type: object
+      properties:
+        subFilterName:
+          type: string
+        subFilterType:
+          enum:
+            - OV
+            - PROVIDER
+            - POWER
+          type: string
+        filterValues:
+          type: array
+          items:
+            $ref: '#/components/schemas/NearbyMeSubFilterValueResponse'
+    NearbyMeSubFilterValueResponse:
+      required:
+        - filterIcon
+        - filterName
+        - name
+      type: object
+      properties:
+        name:
+          type: string
+        filterName:
+          type: string
+        filterIcon:
+          type: string
+    NearbyMeGetSharedModalityDetailsResponseV2:
+      required:
+        - bookingInfo
+        - button
+        - id
+        - name
+        - priceDetails
+        - providerImageUrl
+        - providerLogoUrl
+        - specifications
+      type: object
+      properties:
+        id:
+          type: string
+        description:
+          type: string
+        providerName:
+          type: string
+        providerImageUrl:
+          type: string
+        providerLogoUrl:
+          type: string
+        name:
+          type: string
+        address:
+          type: string
+        batteryInfo:
+          $ref: '#/components/schemas/SharedModalityBatteryInfoResponse'
+        priceDetails:
+          type: array
+          items:
+            type: string
+        specifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/SharedModalitySpecificationResponse'
+        button:
+          $ref: '#/components/schemas/SharedModalityButtonResponse'
+        infoLinks:
+          type: array
+          items:
+            $ref: '#/components/schemas/InfoLink'
+        storeUrls:
+          $ref: '#/components/schemas/SharedModalityStoreUrlsResponse'
+        bookingInfo:
+          $ref: '#/components/schemas/SharedModalityBookingInfoResponse'
+    HrefActionDataFromQrCodeResponse:
+      required:
+        - androidUrl
+        - iosUrl
+        - webUrl
+      type: object
+      properties:
+        iosUrl:
+          type: string
+        androidUrl:
+          type: string
+        webUrl:
+          type: string
+    NearbyMeGetSharedModalityDetailsFromQrCodeResponse:
+      type: object
+      properties:
+        sharedModality:
+          $ref: '#/components/schemas/SharedModalityDetailsFromQrCodeResponse'
+        errorMessage:
+          $ref: '#/components/schemas/SharedModalityErrorMessageResponse'
+    PaymentMethodsActionDataFromQrCodeResponse:
+      required:
+        - bookingContext
+        - modalityId
+        - provider
+      type: object
+      properties:
+        provider:
+          type: string
+        modalityId:
+          type: string
+        bookingContext:
+          type: string
+    SharedModalityBatteryInfoFromQrCodeResponse:
+      required:
+        - iconId
+        - level
+        - text
+      type: object
+      properties:
+        text:
+          type: string
+        level:
+          enum:
+            - EMPTY
+            - ALMOST_EMPTY
+            - LESS_THAN_HALF
+            - MORE_THAN_HALF
+            - ALMOST_FULL
+            - UNKNOWN
+          type: string
+        iconId:
+          type: string
+        iconColor:
+          type: string
+        percentage:
+          type: string
+        distanceLeftInKilometers:
+          type: string
+    SharedModalityBookingInfoFromQrCodeResponse:
+      required:
+        - modalityId
+        - provider
+      type: object
+      properties:
+        bookingContext:
+          type: string
+        provider:
+          type: string
+        modalityId:
+          type: string
+    SharedModalityButtonFromQrCodeResponse:
+      required:
+        - buttonText
+        - variant
+        - weblink
+      type: object
+      properties:
+        buttonText:
+          type: string
+        weblink:
+          type: string
+        variant:
+          type: string
+        iconLeading:
+          type: string
+        paymentMethodsActionData:
+          $ref: '#/components/schemas/PaymentMethodsActionDataFromQrCodeResponse'
+        hrefActionData:
+          $ref: '#/components/schemas/HrefActionDataFromQrCodeResponse'
+    SharedModalityDetailsFromQrCodeResponse:
+      required:
+        - bookingInfo
+        - button
+        - id
+        - name
+        - priceDetails
+        - providerImageUrl
+        - providerLogoUrl
+        - specifications
+      type: object
+      properties:
+        id:
+          type: string
+        description:
+          type: string
+        providerName:
+          type: string
+        providerImageUrl:
+          type: string
+        providerLogoUrl:
+          type: string
+        name:
+          type: string
+        address:
+          type: string
+        batteryInfo:
+          $ref: '#/components/schemas/SharedModalityBatteryInfoFromQrCodeResponse'
+        priceDetails:
+          type: array
+          items:
+            type: string
+        specifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/SharedModalitySpecificationFromQrCodeResponse'
+        button:
+          $ref: '#/components/schemas/SharedModalityButtonFromQrCodeResponse'
+        infoLinks:
+          type: array
+          items:
+            $ref: '#/components/schemas/InfoLink'
+        storeUrls:
+          $ref: '#/components/schemas/SharedModalityStoreUrlsFromQrCodeResponse'
+        bookingInfo:
+          $ref: '#/components/schemas/SharedModalityBookingInfoFromQrCodeResponse'
+    SharedModalityErrorMessageResponse:
+      required:
+        - cause
+        - consequence
+        - text
+        - title
+      type: object
+      properties:
+        title:
+          type: string
+        text:
+          type: string
+        cause:
+          enum:
+            - UNAVAILABLE
+            - UNKNOWN_QR_CODE
+          type: string
+        consequence:
+          enum:
+            - RETRY
+            - DISMISS
+          type: string
+    SharedModalitySpecificationFromQrCodeResponse:
+      required:
+        - color
+        - description
+        - icon
+      type: object
+      properties:
+        description:
+          type: string
+        icon:
+          type: string
+        color:
+          type: string
+    SharedModalityStoreUrlsFromQrCodeResponse:
+      required:
+        - appleStoreUrl
+        - googlePlayStoreUrl
+      type: object
+      properties:
+        googlePlayStoreUrl:
+          type: string
+        appleStoreUrl:
+          type: string
+    BatteryInfoResponse:
+      required:
+        - iconId
+        - level
+        - text
+      type: object
+      properties:
+        text:
+          type: string
+        level:
+          enum:
+            - EMPTY
+            - ALMOST_EMPTY
+            - LESS_THAN_HALF
+            - MORE_THAN_HALF
+            - ALMOST_FULL
+            - UNKNOWN
+          type: string
+        iconId:
+          type: string
+    ButtonResponse:
+      required:
+        - buttonText
+        - weblink
+      type: object
+      properties:
+        weblink:
+          $ref: '#/components/schemas/LinkResponse'
+        deepLink:
+          $ref: '#/components/schemas/LinkResponse'
+        buttonText:
+          type: string
+    LinkResponse:
+      required:
+        - uri
+      type: object
+      properties:
+        uri:
+          type: string
+    NearbyMeGetScooterDetailsResponse:
+      required:
+        - address
+        - batteryInfo
+        - button
+        - distance
+        - id
+        - lat
+        - lng
+        - name
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        lat:
+          type: number
+          format: double
+        lng:
+          type: number
+          format: double
+        thumbnail:
+          $ref: '#/components/schemas/LinkResponse'
+        distance:
+          type: number
+          format: double
+        address:
+          type: string
+        batteryInfo:
+          $ref: '#/components/schemas/BatteryInfoResponse'
+        button:
+          $ref: '#/components/schemas/ButtonResponse'
+    NearbyMeGetLocationsResponseV1:
+      required:
+        - id
+        - lat
+        - lng
+        - name
+        - type
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/NearbyMeLocationIdResponse'
+        lat:
+          type: number
+          format: double
+        lng:
+          type: number
+          format: double
+        name:
+          type: string
+        description:
+          type: string
+        shortDescription:
+          type: string
+        type:
+          enum:
+            - STATION
+            - BUS
+            - MIXED_BUS_TRAM
+            - MIXED_OTHER
+            - METRO
+            - TRAM
+            - OV_FIETS
+            - SHARED_BIKE
+            - SHARED_ELECTRICAL_BIKE
+            - SHARED_SCOOTER
+            - SCOOTER
+            - SHARED_CAR
+            - PARK_AND_RIDE
+            - FERRY
+            - UNKNOWN
+          type: string
+        mixedType:
+          enum:
+            - MIXED_BUS_TRAM
+            - MIXED_OTHER
+          type: string
+        distance:
+          type: number
+          format: double
+        numAvailable:
+          type: integer
+          format: int32
+        address:
+          type: string
+        routeShortNames:
+          type: array
+          items:
+            type: string
+        platform:
+          $ref: '#/components/schemas/PlatformResponse'
+    NearbyMeGetFiltersResponseV1:
+      required:
+        - filterName
+        - filterType
+        - id
+        - name
+        - providers
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        filterName:
+          type: string
+        filterType:
+          type: string
+        providers:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderResponse'
+        subFilters:
+          type: array
+          items:
+            $ref: '#/components/schemas/NearbyMeSubFilterResponse'
+    ProviderResponse:
+      required:
+        - filterName
+        - id
+        - name
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        filterName:
+          type: string
+    NearbyMeGetSharedModalityDetailsResponseV1:
+      required:
+        - bookingContext
+        - bookingInfo
+        - button
+        - id
+        - name
+        - priceDetails
+        - provider
+        - providerImageUrl
+        - providerLogoUrl
+        - specifications
+        - type
+        - variation
+      type: object
+      properties:
+        id:
+          type: string
+        description:
+          type: string
+        type:
+          enum:
+            - STATION
+            - BUS
+            - MIXED_BUS_TRAM
+            - MIXED_OTHER
+            - METRO
+            - TRAM
+            - OV_FIETS
+            - SHARED_BIKE
+            - SHARED_ELECTRICAL_BIKE
+            - SHARED_SCOOTER
+            - SCOOTER
+            - SHARED_CAR
+            - PARK_AND_RIDE
+            - FERRY
+            - UNKNOWN
+          type: string
+        variation:
+          enum:
+            - REGULAR
+            - ELECTRIC
+            - HYBRID
+            - GASOLINE
+            - DIESEL
+            - UNKNOWN
+          type: string
+        provider:
+          enum:
+            - CHECK
+            - DOTT
+            - DEELFIETS
+            - GREENWHEELS
+          type: string
+        providerName:
+          type: string
+        providerImageUrl:
+          type: string
+        providerLogoUrl:
+          type: string
+        name:
+          type: string
+        address:
+          type: string
+        batteryInfo:
+          $ref: '#/components/schemas/SharedModalityBatteryInfoResponse'
+        priceDetails:
+          type: array
+          items:
+            type: string
+        specifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/SharedModalitySpecificationResponse'
+        button:
+          $ref: '#/components/schemas/SharedModalityButtonResponse'
+        storeUrls:
+          $ref: '#/components/schemas/SharedModalityStoreUrlsResponse'
+        bookingInfo:
+          $ref: '#/components/schemas/SharedModalityBookingInfoResponse'
+        bookingContext:
+          type: string
+  securitySchemes:
+    apiKeyHeader:
+      type: apiKey
+      name: Ocp-Apim-Subscription-Key
+      in: header
+    apiKeyQuery:
+      type: apiKey
+      name: subscription-key
+      in: query
+security:
+  - apiKeyHeader: [ ]
+  - apiKeyQuery: [ ]
+tags:
+  - name: Autosuggest
+  - name: OV-fiets
+  - name: Places
+  - name: Scooter
+  - name: NearbyMe
+  - name: modality-details
