@@ -29,4 +29,3 @@ What gets easier, what gets harder, what to watch for.
 
 ## Index
 - [0001 - last_seen_at semantics](0001-last-seen-at-semantics.md)
-- [0002 - Empty-feed guard](0002-empty-feed-guard.md)

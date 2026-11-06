@@ -17,7 +17,9 @@ Decisions with real trade-offs are explained in [docs/decisions/](docs/decisions
 
 #### Added
 - Guard against a bad API response: an empty feed no longer closes all disruptions when
-  `EMPTY_FEED_GUARD_THRESHOLD` (5) or more are active. See [ADR 0002](docs/decisions/0002-empty-feed-guard.md).
+  `EMPTY_FEED_GUARD_THRESHOLD` (5) or more are active; the close step is skipped with a warning
+  and retried on the next run. The threshold is a guess to tune from real data. Partial
+  (non-empty but truncated) responses are not detected.
 
 #### Still open from this iteration
 - Dashboard reads `disruptions` with `select("*")` and is probably capped at 1000 rows by the
