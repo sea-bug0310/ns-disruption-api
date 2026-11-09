@@ -7,8 +7,28 @@ Decisions with real trade-offs are explained in [docs/decisions/](docs/decisions
 
 ## [Unreleased]
 
-### Iteration 3 - New capture (branch `new-capture`), step 1: SQL schema files
-Nothing in the database or the pipeline has changed yet; these files are not run.
+### Iteration 3 - New capture (branch `new-capture`)
+The SQL migration has not been run on Supabase. The new pipeline code below writes to the new
+tables, so it only works after the migration; deploy both together (roadmap decision 12).
+
+#### Pipeline (`src/ingestion.py`)
+- Fetches the whole feed (no `isActive=true`), so future planned maintenance is captured.
+- Lifecycle status per item: `scheduled` (start in the future), `active`, `resolved` (left the
+  feed after its start) or `cancelled` (left the feed before its start). Items with no start
+  (CALAMITY) count as `active` while in the feed. Status is refreshed every run.
+- Hash gate: the whole item is hashed (`HASH_VERSION = 1`, empty denylist); the parsed row and the
+  raw JSON (`disruption_payloads`) are written only when the hash changes. Unchanged items only
+  get `last_seen_at` and status updated.
+- `ingestion_runs`: one row per run, written in its own commits so a failed run is still recorded.
+- New fields parsed: topic, registration/release time, period, phase, impact, additional travel
+  time (min/max).
+- Removed: snapshot writes, km/haversine code, station name and coordinate parsing.
+- Items with an unknown type are skipped with an error log instead of failing the run.
+- Tested on a scratch Postgres with made-up items (new, unchanged, changed, time passing,
+  vanished, reappearing, empty-feed guard, failed run) and with the real NS feed (105 items;
+  a second run with the same data changed 0).
+
+#### SQL schema files (step 1)
 
 #### Added
 - `sql/000_inspect_legacy.sql`: read-only queries to check the real legacy column types, index

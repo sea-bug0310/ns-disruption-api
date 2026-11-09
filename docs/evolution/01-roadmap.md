@@ -174,6 +174,13 @@ Working style: one branch per iteration, atomic commits, entries in `CHANGELOG.m
   `disruption_timespans` table (rebuildable from the raw payloads; decision 8 is still "proposed"),
   `disruptions_all` leaves out `scheduled`/`cancelled` rows and prefers the new row when an id
   exists in both, one-time close of still-active legacy rows, RLS on the new tables.
+  **New pipeline code written 2026-11-09, awaiting review** (`src/ingestion.py`; tested on a
+  scratch Postgres, including a run with the real feed, never against Supabase). Finding from the
+  real feed that same day: for MAINTENANCE, NS sends `summaryAdditionalTravelTime` (68 of 104
+  items) with only a text label ("varies per journey") and **no minutes**, so the min/max columns
+  are empty for maintenance and decision 8's "extra travel time" numbers are not available there.
+  The label stays in the raw payload; add a column only if a chart needs it. The real feed held
+  1 DISRUPTION, 104 MAINTENANCE and no CALAMITY at that moment.
 - Keep-alive: an empty monthly commit is the reliable method. Calling the "enable workflow" API
   may also reset the 60-day timer; unverified, test before relying on it.
 - Raw-payload storage growth is an estimate (a few hundred KB/day); measure after a week.
