@@ -43,7 +43,6 @@ def prepare_disruptions(df, drop_missing_start=True):
     df['duration_minutes'] = (df['end_time'] - df['start_time']).dt.total_seconds() / 60.0
     df['duration_minutes'] = df['duration_minutes'].apply(lambda x: max(x, 0) if pd.notnull(x) else 0)
     df['duration_hours'] = df['duration_minutes'] / 60.0
-    df['affected_km'] = pd.to_numeric(df['affected_km'], errors='coerce').fillna(0)
     
     # --- Time Feature Extractions ---
     if drop_missing_start:

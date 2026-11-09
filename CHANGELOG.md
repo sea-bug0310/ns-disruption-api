@@ -19,6 +19,11 @@ Nothing in the database or the pipeline has changed yet; these files are not run
 - `sql/002_rollback_new_capture.sql`: restores the old names (deletes anything the new pipeline
   captured).
 
+#### Changed
+- Dashboard no longer converts `affected_km` (nothing shows it since the km KPI was removed). The
+  new schema leaves out `affected_km`, `from_station`, `to_station` and their coordinates; the
+  old values stay in `disruptions_legacy`.
+
 ### Iteration 2 - Dashboard fixes (branch `dashboard-improvements`, 2026-11-06)
 
 #### Fixed
