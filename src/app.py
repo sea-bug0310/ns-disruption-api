@@ -22,6 +22,8 @@ except Exception as e:
     st.stop()
 
 # 3. Load Data from Supabase
+# A view: old rows (disruptions_legacy) plus rows captured by the new pipeline. Legacy columns only.
+DISRUPTIONS_TABLE = "disruptions_all"
 def prepare_disruptions(df, drop_missing_start=True):
     """Parse dates and add duration / time features to raw `disruptions` rows."""
     
@@ -60,14 +62,14 @@ def prepare_disruptions(df, drop_missing_start=True):
 @st.cache_data(ttl=300)
 def load_data():
     """All historical disruptions (used by the filtered charts)."""
-    response = supabase.table("disruptions").select("*").execute()
+    response = supabase.table(DISRUPTIONS_TABLE).select("*").execute()
     return prepare_disruptions(pd.DataFrame(response.data))
 
 
 @st.cache_data(ttl=60)
 def load_active():
     """Disruptions active right now. Deliberately independent of the sidebar filters."""
-    response = supabase.table("disruptions").select("*").eq("is_active", True).execute()
+    response = supabase.table(DISRUPTIONS_TABLE).select("*").eq("is_active", True).execute()
     return prepare_disruptions(pd.DataFrame(response.data), drop_missing_start=False)
 
 
@@ -75,7 +77,7 @@ def load_active():
 def load_data_as_of():
     """Last time the pipeline saw any disruption in the NS feed."""
     response = (
-        supabase.table("disruptions")
+        supabase.table(DISRUPTIONS_TABLE)
         .select("last_seen_at")
         .order("last_seen_at", desc=True)
         .limit(1)
@@ -125,7 +127,7 @@ else:
 st.markdown("---")
 
 if df_raw.empty:
-    st.warning("No data found in your Supabase 'disruptions' table.")
+    st.warning(f"No data found in your Supabase '{DISRUPTIONS_TABLE}' view.")
     st.stop()
 
 # 4. Sidebar Filters
