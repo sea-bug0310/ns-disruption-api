@@ -166,6 +166,14 @@ Working style: one branch per iteration, atomic commits, entries in `CHANGELOG.m
   Step 1: write the SQL schema files in `sql/` (no database changes yet). Later steps, in order:
   run the migration (decision 12), new pipeline code (drop `isActive=true`, lifecycle status,
   payload hash gate, `ingestion_runs`), dashboard switch to the union view, ADR.
+  **Step 1 written 2026-11-09, awaiting review** (`sql/000`-`002`, branch `new-capture`, tested on
+  a scratch Postgres with the real legacy table definitions copied from Supabase, not on Supabase
+  itself). Legacy RLS checked 2026-11-09: read-only SELECT policies (`disruptions` for `public`,
+  snapshots for `authenticated`), no write policies, so the new tables' "RLS on, no policies" plus
+  read through the view matches the existing access). Choices to confirm: no
+  `disruption_timespans` table (rebuildable from the raw payloads; decision 8 is still "proposed"),
+  `disruptions_all` leaves out `scheduled`/`cancelled` rows and prefers the new row when an id
+  exists in both, one-time close of still-active legacy rows, RLS on the new tables.
 - Keep-alive: an empty monthly commit is the reliable method. Calling the "enable workflow" API
   may also reset the 60-day timer; unverified, test before relying on it.
 - Raw-payload storage growth is an estimate (a few hundred KB/day); measure after a week.

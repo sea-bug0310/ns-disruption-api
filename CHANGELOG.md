@@ -7,6 +7,18 @@ Decisions with real trade-offs are explained in [docs/decisions/](docs/decisions
 
 ## [Unreleased]
 
+### Iteration 3 - New capture (branch `new-capture`), step 1: SQL schema files
+Nothing in the database or the pipeline has changed yet; these files are not run.
+
+#### Added
+- `sql/000_inspect_legacy.sql`: read-only queries to check the real legacy column types, index
+  names and row level security before migrating.
+- `sql/001_new_capture.sql`: one-transaction migration. Renames the old tables to `*_legacy`,
+  creates `disruptions` (with lifecycle `status`), `disruption_payloads`, `ingestion_runs` and the
+  `disruptions_all` union view, and locks the new tables with row level security.
+- `sql/002_rollback_new_capture.sql`: restores the old names (deletes anything the new pipeline
+  captured).
+
 ### Iteration 2 - Dashboard fixes (branch `dashboard-improvements`, 2026-11-06)
 
 #### Fixed
