@@ -99,6 +99,15 @@ Working style: one branch per iteration, atomic commits, entries in `CHANGELOG.m
       up to more than the number of disruptions; the chart caption says so.
     - No `fact_disruption_station`, no `dim_station`, no `dim_line` (line names are only parsed
       strings, so there is nothing to describe beyond the name). Stations stay in the raw payload.
+12. **Table rename and dashboard switch ship together** (decided 2026-11-09). Streamlit Cloud and
+    the GitHub pipeline both read/write `disruptions` today. A compatibility view with the old
+    name is not possible because the new current-state table is also called `disruptions`.
+    Instead, in one short window: (1) rename the old tables to `*_legacy`, (2) create the new
+    tables, (3) create one union view (e.g. `disruptions_all`, legacy columns only) over legacy
+    plus new rows, (4) change the dashboard's table name to that view and push the new pipeline
+    code. Expect one or two failed pipeline runs and a short dashboard error in between; that is
+    accepted. Make sure `git push` works before touching Supabase, or the live pipeline would
+    break with no way to deploy the fix.
 
 ## Lifecycle status
 
@@ -134,8 +143,8 @@ Working style: one branch per iteration, atomic commits, entries in `CHANGELOG.m
 
 | # | Branch | Deliverable | Status |
 |---|---|---|---|
-| 1 | `fix-critical-bugs` | Empty-feed crash fixed, `last_seen_at` semantics (ADR 0001), empty-feed guard | DONE (not merged) |
-| 2 | `dashboard-improvements` | Active section independent of filters, median KPI, data-as-of + stale warning, UTC parsing | DONE (not merged) |
+| 1 | `fix-critical-bugs` | Empty-feed crash fixed, `last_seen_at` semantics (ADR 0001), empty-feed guard | DONE, merged and pushed |
+| 2 | `dashboard-improvements` | Active section independent of filters, median KPI, data-as-of + stale warning, UTC parsing | DONE, merged and pushed |
 | 3 | `new-capture` | Rename legacy tables, SQL schema files in `sql/`, drop `isActive=true`, lifecycle status, raw payload on change, `ingestion_runs`; ADR for lifecycle + raw payload; commit `scripts/probe_ns_api.py`; add these docs | NEXT |
 | 4 | `pipeline-hardening` | Keep-alive workflow, staleness alert workflow, concurrency + timeout, coverage panel data | PLANNED |
 | 5 | `dashboard-v2` | SQL views (fix 1000-row cap, incl. the `disruption_lines` view), two tabs (no "Active right now"), hour/weekday bars, top lines, notice lead time, extra travel time, 2025 YTD comparison | PLANNED |
@@ -144,9 +153,19 @@ Working style: one branch per iteration, atomic commits, entries in `CHANGELOG.m
 
 ## Open items
 
-- Nothing is pushed or merged. Streamlit Cloud still runs the old dashboard. Merge strategy for
-  `fix-critical-bugs` then `dashboard-improvements` is undecided.
-- The owner must re-enable the disabled scheduled workflow on GitHub.
+- `fix-critical-bugs` and `dashboard-improvements` were merged into `main` (fast-forward) and
+  pushed on 2026-11-09, after the first push failed with 403 (the stored GitHub login,
+  `mi-nguyentt`, had no write access to `sea-bug0310/ns-disruption-api`; fixed by signing in
+  with the right account). Streamlit Cloud should now run the iteration 2 dashboard (verify).
+  If a machine gets 403 again, it is logged in as the wrong GitHub account.
+- The scheduled workflow was re-enabled on GitHub (2026-11-09). The cron `7,27,47 * * * *` in
+  `.github/workflows/ns_api.yml` is correct (every 20 min); GitHub delays or skips scheduled runs
+  under load, so a long gap right after re-enabling is not necessarily a bug. Check the Actions
+  tab; trigger "Run workflow" manually to confirm the pipeline works.
+- **Iteration 3 is to be done step by step, with a review between steps** (owner's request).
+  Step 1: write the SQL schema files in `sql/` (no database changes yet). Later steps, in order:
+  run the migration (decision 12), new pipeline code (drop `isActive=true`, lifecycle status,
+  payload hash gate, `ingestion_runs`), dashboard switch to the union view, ADR.
 - Keep-alive: an empty monthly commit is the reliable method. Calling the "enable workflow" API
   may also reset the 60-day timer; unverified, test before relying on it.
 - Raw-payload storage growth is an estimate (a few hundred KB/day); measure after a week.
@@ -157,7 +176,12 @@ Working style: one branch per iteration, atomic commits, entries in `CHANGELOG.m
 - Other small items: split requirements files, replace `use_container_width`, a clearer
   "Could not connect to Supabase" error, tests + CI, commit author config (local git identity
   differs from the GitHub account).
-- API specs were moved to `docs/api/` (uncommitted at the time of writing).
+- API specs were moved to `docs/api/` (committed 2026-11-09).
+- `dim_cause` has an open question: a disruption can have several timespans with different
+  causes, and `parse_timespans` joins them into one `cause_label` string (`A | B`). Check how often
+  that happens before modelling it; decide between one row per cause or a primary cause.
+- `dim_date` / `dim_time`: only worth it for attributes a timestamp cannot give (holidays,
+  rush-hour flag). Fine as a learning choice; a small hour table is a possible middle path.
 
 ## Practical notes
 
