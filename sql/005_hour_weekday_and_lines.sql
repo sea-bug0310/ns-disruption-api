@@ -69,7 +69,11 @@ WHERE l.disruption_type IN ('DISRUPTION', 'MAINTENANCE')
 --    into the bucket 'Station-wide or unnamed'. The dashboard leaves the bucket out of the chart
 --    and mentions how many items it holds.
 --    Per-line counts add up to more than the number of items: an item counts for every line it
---    touches (decision 11). Direction is not normalised ('A - B' and 'B - A' are two lines).
+--    touches (decision 11).
+--    Direction is merged: 'Amsterdam - Utrecht' and 'Utrecht - Amsterdam' are the same line, and
+--    so are 'Venlo - Mönchengladbach - Düsseldorf' and its reverse. The line is shown in
+--    whichever direction sorts first (LEAST of the two strings, so the first-listed station is
+--    usually the alphabetically first end), and an item that lists both directions counts once.
 --    Items without a title have no row here.
 --    `row_id` is unique, so the dashboard can read the view in pages (data_access.py needs a
 --    unique order column; `id` alone repeats once per line).
@@ -87,12 +91,28 @@ SELECT
 FROM dashboard_disruptions d
 CROSS JOIN LATERAL (
     SELECT DISTINCT
-        CASE WHEN cleaned LIKE '% - %' THEN cleaned ELSE 'Station-wide or unnamed' END AS line
+        CASE
+            WHEN cleaned LIKE '% - %' THEN LEAST(cleaned, reversed)
+            ELSE 'Station-wide or unnamed'
+        END AS line
     FROM (
-        SELECT btrim(regexp_replace(btrim(part), '[. ]+$', '')) AS cleaned
-        FROM unnest(string_to_array(d.title, ';')) AS part
-    ) AS parts
-    WHERE cleaned <> ''
+        SELECT
+            cleaned,
+            -- the same stations in the opposite order
+            array_to_string(
+                ARRAY(
+                    SELECT stop
+                    FROM unnest(string_to_array(cleaned, ' - ')) WITH ORDINALITY AS s(stop, pos)
+                    ORDER BY pos DESC
+                ),
+                ' - '
+            ) AS reversed
+        FROM (
+            SELECT btrim(regexp_replace(btrim(part), '[. ]+$', '')) AS cleaned
+            FROM unnest(string_to_array(d.title, ';')) AS part
+        ) AS parts
+        WHERE cleaned <> ''
+    ) AS c
 ) AS p;
 
 -- (The guard keeps the script working on a plain Postgres without the Supabase roles.)
