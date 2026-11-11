@@ -18,7 +18,12 @@ Decisions with real trade-offs are explained in [docs/decisions/](docs/decisions
 - Both tabs: "Top 10 lines" by number of items and by total hours, "starts by hour of day" and
   "starts by weekday" (Amsterdam time, zeros included). An item counts once for each line it
   touches, so per-line counts add up to more than the total (shown in a caption). Titles that name
-  only a station are left out of the line charts, with a count in the caption.
+  only a station are left out of the line charts, with a count in the caption. Directions are
+  merged ('A - B' and 'B - A' are one line, shown in the sorting-first direction).
+- All dates and times in the dashboard are now Amsterdam time: year, month and week of an item,
+  the period filter of the coverage caption, "Data as of" and the gap times. Before, year and
+  month used UTC while hour and weekday used Amsterdam time. Yearly totals can shift by a few
+  items at year and month boundaries (an item starting 31 Dec 23:30 UTC now counts in January).
 - `sql/005_hour_weekday_and_lines.sql` (NOT YET RUN in Supabase): appends `start_hour` and
   `start_isodow` to `dashboard_disruptions`, and creates the `disruption_lines` view (title split
   on `;`, trailing full stops removed, duplicates within an item dropped, station-only parts in the

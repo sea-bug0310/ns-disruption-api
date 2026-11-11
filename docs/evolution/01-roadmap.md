@@ -223,12 +223,14 @@ values in `disruptions_legacy`); phase is stored as `phase_id` + `phase_label`; 
   (Amsterdam time) to `dashboard_disruptions` and creates `disruption_lines`. Run it in Supabase
   BEFORE deploying the 5c dashboard code. Checked on the real feed (109 items gave 132 item-line
   rows, 10 station-only titles). Notes: the station-wide bucket is left out of the line charts and
-  only counted in a caption; direction is not normalised ('A - B' and 'B - A' are two lines);
-  Year / Month / week still come from the UTC start time while hour and weekday are Amsterdam time,
-  so an item starting between 00:00 and 02:00 Amsterdam time at a month boundary can land in the
-  other month (cosmetic).
+  only counted in a caption. Directions are merged ('A - B' = 'B - A'; the line is shown in the
+  sorting-first direction, so `Heerlen - Aachen Hbf` appears as `Aachen Hbf - Heerlen`). All
+  dashboard dates are Amsterdam time (decided 2026-11-11, replacing the earlier UTC year/month).
+  When checking totals against SQL, use the same time zone:
+  `WHERE start_time AT TIME ZONE 'Europe/Amsterdam' >= '2026-01-01' AND ... < '2027-01-01'`.
 - For 5e: our feed uses English station names (`Amsterdam Central`) while the 2025 CSV uses Dutch
-  ones (`Amsterdam Centraal`), so lines need name matching before they can be compared.
+  ones (`Amsterdam Centraal`), so lines need name matching before they can be compared. The 2025
+  `ns_lines` also need the same direction merge as `disruption_lines`.
 - Streamlit versions differ: local `ns-api` env has 1.37.1, Streamlit Cloud installs the latest
   (Python 3.14, requirements are unpinned). `use_container_width` is deprecated in the latest but
   `width="stretch"` does not exist in 1.37.1, so the code keeps `use_container_width` until the
