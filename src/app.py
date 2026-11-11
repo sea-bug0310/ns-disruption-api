@@ -2,6 +2,7 @@ import streamlit as st
 from supabase import create_client, Client
 import pandas as pd
 import plotly.express as px
+from data_access import fetch_all_rows
 
 # 1. Page Configuration
 st.set_page_config(page_title="NS Train Disruptions Dashboard", layout="wide")
@@ -62,15 +63,16 @@ def prepare_disruptions(df, drop_missing_start=True):
 @st.cache_data(ttl=300)
 def load_data():
     """All historical disruptions (used by the filtered charts)."""
-    response = supabase.table(DISRUPTIONS_TABLE).select("*").execute()
-    return prepare_disruptions(pd.DataFrame(response.data))
+    # Paged: Supabase returns at most 1000 rows per request (see data_access.py).
+    rows = fetch_all_rows(supabase, DISRUPTIONS_TABLE)
+    return prepare_disruptions(pd.DataFrame(rows))
 
 
 @st.cache_data(ttl=60)
 def load_active():
     """Disruptions active right now. Deliberately independent of the sidebar filters."""
-    response = supabase.table(DISRUPTIONS_TABLE).select("*").eq("is_active", True).execute()
-    return prepare_disruptions(pd.DataFrame(response.data), drop_missing_start=False)
+    rows = fetch_all_rows(supabase, DISRUPTIONS_TABLE, is_active=True)
+    return prepare_disruptions(pd.DataFrame(rows), drop_missing_start=False)
 
 
 @st.cache_data(ttl=60)
