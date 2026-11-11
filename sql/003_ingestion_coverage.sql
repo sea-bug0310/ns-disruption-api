@@ -3,7 +3,7 @@
 -- One view over `ingestion_runs` for the dashboard's coverage caption (roadmap decision 5),
 -- e.g. "gaps over 12 hours: 2, longest 34 h". Additive only: no table changes, safe to run
 -- while the pipeline is live. Run it by pasting the whole file into the Supabase SQL editor.
--- NOT YET RUN.
+-- Run in Supabase on 2026-11-11.
 --
 -- Coverage is described by GAPS between successful runs, not by "percent of expected runs":
 -- GitHub currently starts the schedule only a few times a day instead of every 20 minutes, so a

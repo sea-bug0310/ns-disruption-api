@@ -16,7 +16,7 @@ Decisions with real trade-offs are explained in [docs/decisions/](docs/decisions
   tests the push. The logic was tested locally; that an empty commit by the bot really resets
   GitHub's 60-day timer is not verified yet.
 
-- `sql/003_ingestion_coverage.sql` (not run in Supabase yet): view `ingestion_gaps` (each
+- `sql/003_ingestion_coverage.sql` (run in Supabase on 2026-11-11): view `ingestion_gaps` (each
   successful run with the time since the previous one, timestamps only) for the dashboard's
   coverage caption. Coverage is described by gaps, not "percent of expected runs", because GitHub
   currently starts the schedule only a few times a day.
