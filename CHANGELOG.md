@@ -7,6 +7,15 @@ Decisions with real trade-offs are explained in [docs/decisions/](docs/decisions
 
 ## [Unreleased]
 
+### Iteration 4 - Pipeline hardening (branch `pipeline-hardening`)
+
+#### Added
+- `.github/workflows/keep_alive.yml`: runs weekly and adds an empty commit only when the newest
+  commit is 30 or more days old, so GitHub does not disable the scheduled pipeline after 60 days
+  without repository activity (this switched it off twice before). A manual run with `force`
+  tests the push. The logic was tested locally; that an empty commit by the bot really resets
+  GitHub's 60-day timer is not verified yet.
+
 ### Iteration 3 - New capture (branch `new-capture`)
 The SQL migration has not been run on Supabase. The new pipeline code below writes to the new
 tables, so it only works after the migration; deploy both together (roadmap decision 12).

@@ -1,0 +1,47 @@
+name: Keep alive
+
+# GitHub disables scheduled workflows in a repository after 60 days without repository activity,
+# and the workflow's own runs do not count. That switched the pipeline off twice. This workflow
+# checks weekly and, only when the newest commit is 30 days old or more, adds an empty commit.
+# Checking weekly (instead of committing monthly) means one skipped or delayed run is harmless,
+# and the history only gets a keep-alive commit about once a month when nothing else happens.
+
+on:
+  schedule:
+    - cron: "17 3 * * 1"   # Mondays, 03:17 UTC
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Add the empty commit even if the last commit is recent (to test the push)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write   # needed to push the empty commit; nothing else
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Add an empty commit if the last commit is 30+ days old
+        env:
+          FORCE: ${{ inputs.force }}
+        run: |
+          last_commit=$(git log -1 --format=%ct)
+          age_days=$(( ( $(date +%s) - last_commit ) / 86400 ))
+          echo "Newest commit is ${age_days} days old"
+
+          if [ "$age_days" -ge 30 ] || [ "$FORCE" = "true" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit --allow-empty -m "Keep-alive: empty commit so GitHub keeps scheduled workflows enabled"
+            git push
+            echo "Pushed a keep-alive commit"
+          else
+            echo "Recent activity, nothing to do"
+          fi
