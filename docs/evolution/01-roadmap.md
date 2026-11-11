@@ -153,7 +153,7 @@ values in `disruptions_legacy`); phase is stored as `phase_id` + `phase_label`; 
 | 1 | `fix-critical-bugs` | Empty-feed crash fixed, `last_seen_at` semantics (ADR 0001), empty-feed guard | DONE, merged and pushed |
 | 2 | `dashboard-improvements` | Active section independent of filters, median KPI, data-as-of + stale warning, UTC parsing | DONE, merged and pushed |
 | 3 | `new-capture` | Rename legacy tables, SQL schema files in `sql/`, drop `isActive=true`, lifecycle status, raw payload on change, `ingestion_runs`; ADRs 0002 + 0003; probe script and these docs committed | DONE 2026-11-09, merged and pushed; migration run in Supabase |
-| 4 | `pipeline-hardening` | Keep-alive workflow, concurrency + 10-minute timeout, coverage views (`sql/003`). Staleness alert deferred to iteration 7 (Airflow): GitHub's schedule cannot be forced, so an alert on it would only show GitHub's own delays | written 2026-11-11, review and merge pending |
+| 4 | `pipeline-hardening` | Keep-alive workflow, concurrency + 10-minute timeout, coverage view (`sql/003`). Staleness alert deferred to iteration 7 (Airflow): GitHub's schedule cannot be forced, so an alert on it would only show GitHub's own delays | written 2026-11-11, review and merge pending |
 | 5 | `dashboard-v2` | SQL views (fix 1000-row cap, incl. the `disruption_lines` view), two tabs (no "Active right now"), hour/weekday bars, top lines, notice lead time, extra travel time, 2025 YTD comparison | PLANNED |
 | 6 | `dbt-star-schema` | dbt on Postgres: staging models, star schema (`fact_disruption` at one row per disruption, `dim_cause`, `dim_date`, `dim_time`; no station or line dimension, see decision 11), tests | LATER |
 | 7 | orchestration | Airflow (5-min schedule, retries) and/or a Databricks bronze/silver/gold run, to show the stack | LATER |
@@ -196,11 +196,13 @@ values in `disruptions_legacy`); phase is stored as `phase_id` + `phase_label`; 
 - A run killed by the 10-minute timeout cannot mark itself as failed, so its `ingestion_runs` row
   stays `running`. The coverage panel and the staleness check must treat a `running` row older
   than about 15 minutes as failed, not as in progress.
-- Coverage definition (2026-11-11): by gaps and runs per day, not "percent of expected runs".
+- Coverage definition (2026-11-11): by gaps between successful runs, not "percent of expected runs".
   GitHub currently starts the schedule only about 4 times a day (gaps of 8+ hours seen), so a
   percentage against the 20-minute cron would read about 6%. The dashboard's stale warning
   (`STALE_AFTER_HOURS = 3` in `app.py`) is too tight for that and should be raised (e.g. to 12).
-  The coverage caption itself is built in iteration 5 from the `sql/003` views.
+  The coverage caption itself is built in iteration 5 from the `sql/003` view `ingestion_gaps`.
+  Deliberately not built yet: a runs-per-day view and a view treating runs stuck in `running` as
+  failed (see the note above); add them when the staleness alert or a runs-per-day chart exists.
 - Raw-payload storage growth is an estimate (a few hundred KB/day); measure after a week.
 - The volatility probe only covered 5 minutes with no real changes. Optionally repeat it with
   `--wait 60`, and look at what an edited item looks like (does an array reorder when an item is
