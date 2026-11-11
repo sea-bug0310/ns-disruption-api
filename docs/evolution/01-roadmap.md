@@ -154,7 +154,7 @@ values in `disruptions_legacy`); phase is stored as `phase_id` + `phase_label`; 
 | 2 | `dashboard-improvements` | Active section independent of filters, median KPI, data-as-of + stale warning, UTC parsing | DONE, merged and pushed |
 | 3 | `new-capture` | Rename legacy tables, SQL schema files in `sql/`, drop `isActive=true`, lifecycle status, raw payload on change, `ingestion_runs`; ADRs 0002 + 0003; probe script and these docs committed | DONE 2026-11-09, merged and pushed; migration run in Supabase |
 | 4 | `pipeline-hardening` | Keep-alive workflow, concurrency + 10-minute timeout, coverage view (`sql/003`). Staleness alert deferred to iteration 7 (Airflow): GitHub's schedule cannot be forced, so an alert on it would only show GitHub's own delays | written 2026-11-11, review and merge pending |
-| 5 | `dashboard-v2` | SQL views (fix 1000-row cap, incl. the `disruption_lines` view), two tabs (no "Active right now"), hour/weekday bars, top lines, notice lead time, extra travel time, 2025 YTD comparison | PLANNED |
+| 5 | `dashboard-v2` | SQL views (fix 1000-row cap, incl. the `disruption_lines` view), two tabs (no "Active right now"), hour/weekday bars, top lines, notice lead time, extra travel time, 2025 YTD comparison | IN PROGRESS: 5a done (paging), see Open items |
 | 6 | `dbt-star-schema` | dbt on Postgres: staging models, star schema (`fact_disruption` at one row per disruption, `dim_cause`, `dim_date`, `dim_time`; no station or line dimension, see decision 11), tests | LATER |
 | 7 | orchestration | Airflow (5-min schedule, retries) and/or a Databricks bronze/silver/gold run, to show the stack | LATER |
 
@@ -203,6 +203,25 @@ values in `disruptions_legacy`); phase is stored as `phase_id` + `phase_label`; 
   The coverage caption itself is built in iteration 5 from the `sql/003` view `ingestion_gaps`.
   Deliberately not built yet: a runs-per-day view and a view treating runs stuck in `running` as
   failed (see the note above); add them when the staleness alert or a runs-per-day chart exists.
+- **Iteration 5 plan (2026-11-11), in steps with a review between them.** 5a fix the 1000-row cap
+  (done: `src/data_access.py` reads in pages; `disruptions_all` has about 1.5k rows, so the
+  dashboard had been showing only 1000). 5b two tabs, no "Active right now", no type filter,
+  coverage caption from `ingestion_gaps`, stale warning raised from 3 to 12 hours. 5c hour of day,
+  weekday, top 10 lines by count and by duration. 5d maintenance-only charts (notice given,
+  replacement service). 5e 2025 year-to-date comparison. The SQL views from the roadmap are built
+  in the step that needs them (the dashboard view with duration and Amsterdam hour/weekday in 5b,
+  `disruption_lines` in 5c), not up front. Views return rows (read in pages, grouped in pandas),
+  not aggregates; iteration 6 (dbt) replaces them with proper tables. The maintenance tab counts
+  scheduled work and leaves out cancelled work. Charts on new-only fields (impact) would hold only
+  a few days of data, so they come last. No extra-travel-time chart for maintenance (NS sends no
+  minutes).
+- 2025 comparison data: `data/disruptions-2025.csv` (CC BY 4.0, attribution in the README). Lines
+  are compared via its `ns_lines` column, which matches our `title`; `rdt_lines` is Rijden de
+  Treinen's own standardised list, built from their line catalogue and the affected stations (no
+  published description of the matching found; they invite questions on their site).
+- The README is out of date after iterations 3 and 4: it still describes the haversine km,
+  `disruption_snapshots`, `is_active` and the weighted-impact KPI, and its clone URL uses the old
+  repo name. Rewrite it at the end of iteration 5 (it is the portfolio front page).
 - Raw-payload storage growth is an estimate (a few hundred KB/day); measure after a week.
 - The volatility probe only covered 5 minutes with no real changes. Optionally repeat it with
   `--wait 60`, and look at what an edited item looks like (does an array reorder when an item is
