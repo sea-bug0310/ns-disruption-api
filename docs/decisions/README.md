@@ -31,3 +31,4 @@ What gets easier, what gets harder, what to watch for.
 - [0001 - last_seen_at semantics](0001-last-seen-at-semantics.md)
 - [0002 - Store the raw item when it changes (hash gate)](0002-raw-payload-and-hash-gate.md)
 - [0003 - Lifecycle status for items in the feed](0003-lifecycle-status.md)
+- [0004 - Telling domestic from international lines](0004-domestic-or-international-lines.md)

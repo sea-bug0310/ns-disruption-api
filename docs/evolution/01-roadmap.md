@@ -228,6 +228,13 @@ values in `disruptions_legacy`); phase is stored as `phase_id` + `phase_label`; 
   dashboard dates are Amsterdam time (decided 2026-11-11, replacing the earlier UTC year/month).
   When checking totals against SQL, use the same time zone:
   `WHERE start_time AT TIME ZONE 'Europe/Amsterdam' >= '2026-01-01' AND ... < '2027-01-01'`.
+- Domestic / international filter (2026-11-11, ADR 0004): `sql/006` + `scripts/load_stations.py`
+  + the "Line type" sidebar filter. Deploy order: run `sql/006` in Supabase, run
+  `python scripts/load_stations.py` (the flag is false everywhere until the table is filled), check
+  the printed unmatched stops, run the dashboard locally, then push. In the real feed 36 of 109
+  items had an international line. This is the first station-level question, so the roadmap's
+  "add `disruption_stations` / `dim_station` only if a real station question appears" is
+  answered for stations: `ref_station_names` is a candidate seed for iteration 6.
 - For 5e: our feed uses English station names (`Amsterdam Central`) while the 2025 CSV uses Dutch
   ones (`Amsterdam Centraal`), so lines need name matching before they can be compared. The 2025
   `ns_lines` also need the same direction merge as `disruption_lines`.

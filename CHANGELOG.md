@@ -14,6 +14,16 @@ Decisions with real trade-offs are explained in [docs/decisions/](docs/decisions
   plain `select("*")` showed only the first 1000 of the 1.5k rows in `disruptions_all`
   (`src/data_access.py`, paged with a stable order). Totals and charts go up to the real numbers.
 
+#### Added (domestic / international filter, NOT YET DEPLOYED)
+- Sidebar filter "Line type" (Domestic, International; both by default, either or both can be
+  chosen). It filters the lines and the items that have such a line in both tabs; an item with a
+  domestic and an international line appears under both. See ADR 0004.
+- `sql/006_station_names_and_line_country.sql` (NOT YET RUN in Supabase): table
+  `ref_station_names`, function `stop_country_class` and the flag `is_international` on
+  `disruption_lines`.
+- `scripts/load_stations.py` (NOT YET RUN): fills `ref_station_names` from the NS stations API and
+  prints the stops in line titles that match no station. Re-run it to refresh the list.
+
 #### Added (step 5c)
 - Both tabs: "Top 10 lines" by number of items and by total hours, "starts by hour of day" and
   "starts by weekday" (Amsterdam time, zeros included). An item counts once for each line it
