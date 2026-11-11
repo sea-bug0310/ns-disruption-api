@@ -30,6 +30,7 @@ GAPS_VIEW = "ingestion_gaps"                # sql/003: time between successful p
 LINES_VIEW = "disruption_lines"             # sql/005: one row per item and line name
 STATION_WIDE = "Station-wide or unnamed"    # bucket for titles that name a station, not a line
 WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+LINE_TYPES = ["Domestic", "International"]
 
 # GitHub currently starts the scheduled pipeline only a few times a day (gaps of 8+ hours are
 # normal), so "stale" means no new data for half a day.
@@ -162,6 +163,33 @@ def of_type(frame, disruption_type):
     return frame[frame['disruption_type'] == disruption_type]
 
 
+def filter_line_type(df, df_lines, selected):
+    """Keep only the lines of the selected type(s) and the items that have such a line.
+
+    With both types selected nothing is filtered (items without a line name stay). With one type,
+    an item is kept when at least one of its lines is of that type, so an item with a domestic and
+    an international line appears under both.
+    """
+    if set(selected) == set(LINE_TYPES):
+        return df, df_lines
+
+    if df.empty or df_lines.empty or not selected:
+        return df.iloc[0:0], df_lines.iloc[0:0]
+
+    wanted = selected[0] == "International"
+    lines = df_lines[df_lines['is_international'] == wanted]
+    return df[df['id'].isin(lines['id'])], lines
+
+
+selected_line_types = st.sidebar.multiselect(
+    "Line type",
+    options=LINE_TYPES,
+    default=LINE_TYPES,
+    help="Domestic: lines between Dutch stations only. International: lines with at least one "
+         "stop abroad (sql/006). An item that has both kinds of line appears in both. Lines whose "
+         "stops are not recognised count as domestic.",
+)
+
 df_period = in_period(df_raw)
 df_lines_period = in_period(df_lines_raw)
 
@@ -242,15 +270,18 @@ def ordered_bar(labels, values):
     return fig
 
 
-def render_tab(df, df_lines, key, noun, duration_label, show_causes, show_upcoming):
+def render_tab(df, df_lines, key, noun, duration_label, show_causes, show_upcoming, filter_note=None):
     """One tab: KPIs, trend over time and breakdowns for a set of rows.
 
     df_lines: the same items, one row per item and line.
     key: unique prefix for widget keys (Streamlit needs one per widget).
     noun: what the rows are called in labels, e.g. "disruptions".
     """
+    if filter_note:
+        st.caption(filter_note)
+
     if df.empty:
-        st.info(f"No {noun} in the selected period.")
+        st.info(f"No {noun} in the selected period" + (" and line type." if filter_note else "."))
         return
 
     # --- KPIs ---
@@ -393,29 +424,46 @@ def render_tab(df, df_lines, key, noun, duration_label, show_causes, show_upcomi
                 st.plotly_chart(horizontal_bar(counts, 'cause_label'), use_container_width=True, key=f"{key}_causes")
 
 
+if not selected_line_types:
+    st.info("Select at least one line type in the sidebar.")
+    st.stop()
+
+# What the tabs say when they are filtered to one line type
+if set(selected_line_types) == set(LINE_TYPES):
+    line_filter_note = None
+else:
+    line_filter_note = (
+        f"Only {selected_line_types[0].lower()} lines. An item with both domestic and "
+        "international lines appears in both views."
+    )
+
 # 5. Tabs: unplanned disruptions and planned maintenance
 tab_disruptions, tab_maintenance = st.tabs(["Unplanned disruptions", "Planned maintenance"])
 
 with tab_disruptions:
     render_tab(
-        of_type(df_period, 'DISRUPTION'),
-        of_type(df_lines_period, 'DISRUPTION'),
+        *filter_line_type(
+            of_type(df_period, 'DISRUPTION'), of_type(df_lines_period, 'DISRUPTION'), selected_line_types
+        ),
         key="disruptions",
         noun="disruptions",
         duration_label="Median duration",
         show_causes=True,
         show_upcoming=False,
+        filter_note=line_filter_note,
     )
 
 with tab_maintenance:
     # Future work counts too (status 'scheduled'). No causes chart: every maintenance item has
     # the same cause ("engineering works"), so it would be one bar.
     render_tab(
-        of_type(df_period, 'MAINTENANCE'),
-        of_type(df_lines_period, 'MAINTENANCE'),
+        *filter_line_type(
+            of_type(df_period, 'MAINTENANCE'), of_type(df_lines_period, 'MAINTENANCE'), selected_line_types
+        ),
         key="maintenance",
         noun="works",
         duration_label="Median planned duration",
         show_causes=False,
         show_upcoming=True,
+        filter_note=line_filter_note,
     )
