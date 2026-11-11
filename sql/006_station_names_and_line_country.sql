@@ -10,7 +10,10 @@
 -- Additive: one table, one function, one view definition replaced with an extra column. Safe to
 -- run while the pipeline is live. Run it by pasting the whole file into the Supabase SQL editor,
 -- then run `python scripts/load_stations.py` (the flag is false for every line until the table is
--- filled), BEFORE the dashboard code that reads the flag is deployed. NOT YET RUN.
+-- filled), BEFORE the dashboard code that reads the flag is deployed. Run in Supabase on
+-- 2026-11-11. NOTE: the first version of this file revoked EXECUTE on the function and broke
+-- the dashboard (see 007); this file now has the corrected function, 007 repairs a database
+-- where the first version ran.
 --
 -- How a stop is classified (first rule that applies):
 --   1. its name equals a Dutch station name                      -> 'NL'
@@ -45,6 +48,7 @@ ALTER TABLE ref_station_names ENABLE ROW LEVEL SECURITY;
 -- ---------------------------------------------------------------------------
 CREATE FUNCTION stop_country_class(stop text) RETURNS text
 LANGUAGE sql STABLE
+SECURITY DEFINER SET search_path = public, pg_temp   -- see the comment below and 007
 AS $$
     WITH s AS (SELECT btrim(split_part(stop, ' / ', 1)) AS name)
     SELECT CASE
@@ -63,17 +67,19 @@ AS $$
     FROM s
 $$;
 
--- The function is only meant for the views below. Without this, Supabase would expose it to the
--- dashboard's key as an API endpoint. (A view runs its functions with its owner's rights.)
-REVOKE EXECUTE ON FUNCTION stop_country_class(text) FROM PUBLIC;
-
+-- A view reads its tables with the view owner's rights, but a function it calls is checked against
+-- the user who queries the view (the dashboard's key). So that key must be allowed to execute
+-- the function, and the function runs as its owner (SECURITY DEFINER above) because it reads
+-- ref_station_names, which row level security closes to that key. Side effect: Supabase also
+-- offers the function as an API call; it only returns the country class of a stop name from
+-- the public station list, and the table itself stays closed.
 DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
-        REVOKE EXECUTE ON FUNCTION stop_country_class(text) FROM anon;
+        GRANT EXECUTE ON FUNCTION stop_country_class(text) TO anon;
     END IF;
     IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
-        REVOKE EXECUTE ON FUNCTION stop_country_class(text) FROM authenticated;
+        GRANT EXECUTE ON FUNCTION stop_country_class(text) TO authenticated;
     END IF;
 END $$;
 
