@@ -18,7 +18,7 @@
 --
 -- 006 itself has been corrected too, so a fresh setup (001 ... 006, 007) ends in the same state.
 -- Run this file if 006 was already run in the old form. Safe to run more than once.
--- NOT YET RUN.
+-- Run in Supabase on 2026-11-11.
 --
 -- Undo:  ALTER FUNCTION stop_country_class(text) SECURITY INVOKER;
 --        REVOKE EXECUTE ON FUNCTION stop_country_class(text) FROM anon, authenticated;

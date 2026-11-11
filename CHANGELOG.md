@@ -17,20 +17,20 @@ Decisions with real trade-offs are explained in [docs/decisions/](docs/decisions
 #### Fixed (domestic / international filter)
 - `sql/006` made the dashboard fail with "permission denied for function stop_country_class": a
   function called by a view is checked against the user who queries the view (the dashboard's key),
-  not the view owner, and 006 had revoked that right. `sql/007` (NOT YET RUN) repairs a database
+  not the view owner, and 006 had revoked that right. `sql/007` (run in Supabase on 2026-11-11) repairs a database
   where the first 006 ran: the function now runs as its owner (it reads a table the dashboard key
   cannot read) and the dashboard roles may execute it. 006 itself is corrected for fresh setups.
   Caught by running the dashboard; the earlier tests ran as the database owner. All views are now
   tested as the dashboard's role (`anon`).
 
-#### Added (domestic / international filter, NOT YET DEPLOYED)
+#### Added (domestic / international filter)
 - Sidebar filter "Line type" (Domestic, International; both by default, either or both can be
   chosen). It filters the lines and the items that have such a line in both tabs; an item with a
   domestic and an international line appears under both. See ADR 0004.
-- `sql/006_station_names_and_line_country.sql` (NOT YET RUN in Supabase): table
+- `sql/006_station_names_and_line_country.sql` (run in Supabase on 2026-11-11): table
   `ref_station_names`, function `stop_country_class` and the flag `is_international` on
   `disruption_lines`.
-- `scripts/load_stations.py` (NOT YET RUN): fills `ref_station_names` from the NS stations API and
+- `scripts/load_stations.py` (run on 2026-11-11): fills `ref_station_names` from the NS stations API and
   prints the stops in line titles that match no station. Re-run it to refresh the list.
 
 #### Added (step 5c)
