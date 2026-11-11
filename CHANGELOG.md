@@ -7,6 +7,17 @@ Decisions with real trade-offs are explained in [docs/decisions/](docs/decisions
 
 ## [Unreleased]
 
+### Iteration 5 - Dashboard v2 (in progress)
+
+#### Fixed
+- Step 5a: the dashboard now reads all rows. Supabase returns at most 1000 rows per request, so a
+  plain `select("*")` showed only the first 1000 of the 1.5k rows in `disruptions_all`
+  (`src/data_access.py`, paged with a stable order). Totals and charts go up to the real numbers.
+
+#### Added
+- `data/disruptions-2025.csv` (Rijden de Treinen open data, CC BY 4.0) with `data/README.md` and an
+  attribution section in the README.
+
 ### Iteration 4 - Pipeline hardening (branch `pipeline-hardening`)
 
 #### Added
