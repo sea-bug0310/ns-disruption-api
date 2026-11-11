@@ -154,7 +154,7 @@ values in `disruptions_legacy`); phase is stored as `phase_id` + `phase_label`; 
 | 2 | `dashboard-improvements` | Active section independent of filters, median KPI, data-as-of + stale warning, UTC parsing | DONE, merged and pushed |
 | 3 | `new-capture` | Rename legacy tables, SQL schema files in `sql/`, drop `isActive=true`, lifecycle status, raw payload on change, `ingestion_runs`; ADRs 0002 + 0003; probe script and these docs committed | DONE 2026-11-09, merged and pushed; migration run in Supabase |
 | 4 | `pipeline-hardening` | Keep-alive workflow, concurrency + 10-minute timeout, coverage view (`sql/003`). Staleness alert deferred to iteration 7 (Airflow): GitHub's schedule cannot be forced, so an alert on it would only show GitHub's own delays | written 2026-11-11, review and merge pending |
-| 5 | `dashboard-v2` | SQL views (fix 1000-row cap, incl. the `disruption_lines` view), two tabs (no "Active right now"), hour/weekday bars, top lines, notice lead time, extra travel time, 2025 YTD comparison | IN PROGRESS: 5a and 5b done and deployed, 5c to 5e open, see Open items |
+| 5 | `dashboard-v2` | SQL views (fix 1000-row cap, incl. the `disruption_lines` view), two tabs (no "Active right now"), hour/weekday bars, top lines, notice lead time, extra travel time, 2025 YTD comparison | IN PROGRESS: 5a and 5b deployed, 5c written (needs `sql/005` run first), 5d and 5e open, see Open items |
 | 6 | `dbt-star-schema` | dbt on Postgres: staging models, star schema (`fact_disruption` at one row per disruption, `dim_cause`, `dim_date`, `dim_time`; no station or line dimension, see decision 11), tests | LATER |
 | 7 | orchestration | Airflow (5-min schedule, retries) and/or a Databricks bronze/silver/gold run, to show the stack | LATER |
 
@@ -219,6 +219,16 @@ values in `disruptions_legacy`); phase is stored as `phase_id` + `phase_label`; 
   rows as `resolved`, new rows with `status`, includes `scheduled`, leaves out `cancelled` and
   CALAMITY). Run it in Supabase BEFORE deploying the 5b dashboard code (done 2026-11-11). The coverage caption only
   has data since the run log started (2026-11-09). `disruptions_all` is now unused.
+- 5c (2026-11-11): `sql/005_hour_weekday_and_lines.sql` appends `start_hour` / `start_isodow`
+  (Amsterdam time) to `dashboard_disruptions` and creates `disruption_lines`. Run it in Supabase
+  BEFORE deploying the 5c dashboard code. Checked on the real feed (109 items gave 132 item-line
+  rows, 10 station-only titles). Notes: the station-wide bucket is left out of the line charts and
+  only counted in a caption; direction is not normalised ('A - B' and 'B - A' are two lines);
+  Year / Month / week still come from the UTC start time while hour and weekday are Amsterdam time,
+  so an item starting between 00:00 and 02:00 Amsterdam time at a month boundary can land in the
+  other month (cosmetic).
+- For 5e: our feed uses English station names (`Amsterdam Central`) while the 2025 CSV uses Dutch
+  ones (`Amsterdam Centraal`), so lines need name matching before they can be compared.
 - Streamlit versions differ: local `ns-api` env has 1.37.1, Streamlit Cloud installs the latest
   (Python 3.14, requirements are unpinned). `use_container_width` is deprecated in the latest but
   `width="stretch"` does not exist in 1.37.1, so the code keeps `use_container_width` until the
