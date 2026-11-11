@@ -103,3 +103,11 @@ python src/ingestion.py
 # Launch the Streamlit dashboard
 streamlit run src/app.py
 ```
+---
+
+## 📚 Data sources & attribution
+
+- **NS Disruptions API** (live feed, via the NS API Portal).
+- **Rijden de Treinen open data** (`data/disruptions-2025.csv`): disruption data for 2025, used for
+  year-over-year comparison. Source: [Rijden de Treinen](https://www.rijdendetreinen.nl/en/open-data/disruptions),
+  licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
