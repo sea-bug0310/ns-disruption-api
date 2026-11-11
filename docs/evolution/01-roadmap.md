@@ -154,7 +154,7 @@ values in `disruptions_legacy`); phase is stored as `phase_id` + `phase_label`; 
 | 2 | `dashboard-improvements` | Active section independent of filters, median KPI, data-as-of + stale warning, UTC parsing | DONE, merged and pushed |
 | 3 | `new-capture` | Rename legacy tables, SQL schema files in `sql/`, drop `isActive=true`, lifecycle status, raw payload on change, `ingestion_runs`; ADRs 0002 + 0003; probe script and these docs committed | DONE 2026-11-09, merged and pushed; migration run in Supabase |
 | 4 | `pipeline-hardening` | Keep-alive workflow, concurrency + 10-minute timeout, coverage view (`sql/003`). Staleness alert deferred to iteration 7 (Airflow): GitHub's schedule cannot be forced, so an alert on it would only show GitHub's own delays | written 2026-11-11, review and merge pending |
-| 5 | `dashboard-v2` | SQL views (fix 1000-row cap, incl. the `disruption_lines` view), two tabs (no "Active right now"), hour/weekday bars, top lines, notice lead time, extra travel time, 2025 YTD comparison | IN PROGRESS: 5a and 5b deployed, 5c written (needs `sql/005` run first), 5d and 5e open, see Open items |
+| 5 | `dashboard-v2` | SQL views (fix 1000-row cap, incl. the `disruption_lines` view), two tabs (no "Active right now"), hour/weekday bars, top lines, notice lead time, extra travel time, 2025 YTD comparison | IN PROGRESS: 5a to 5c deployed, 5d and 5e open, see Open items |
 | 6 | `dbt-star-schema` | dbt on Postgres: staging models, star schema (`fact_disruption` at one row per disruption, `dim_cause`, `dim_date`, `dim_time`; no station or line dimension, see decision 11), tests | LATER |
 | 7 | orchestration | Airflow (5-min schedule, retries) and/or a Databricks bronze/silver/gold run, to show the stack | LATER |
 
@@ -221,7 +221,7 @@ values in `disruptions_legacy`); phase is stored as `phase_id` + `phase_label`; 
   has data since the run log started (2026-11-09). `disruptions_all` is now unused.
 - 5c (2026-11-11): `sql/005_hour_weekday_and_lines.sql` appends `start_hour` / `start_isodow`
   (Amsterdam time) to `dashboard_disruptions` and creates `disruption_lines`. Run it in Supabase
-  BEFORE deploying the 5c dashboard code. Checked on the real feed (109 items gave 132 item-line
+  BEFORE deploying the 5c dashboard code (done 2026-11-11). Checked on the real feed (109 items gave 132 item-line
   rows, 10 station-only titles). Notes: the station-wide bucket is left out of the line charts and
   only counted in a caption. Directions are merged ('A - B' = 'B - A'; the line is shown in the
   sorting-first direction, so `Heerlen - Aachen Hbf` appears as `Aachen Hbf - Heerlen`). All

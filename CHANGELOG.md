@@ -14,7 +14,7 @@ Decisions with real trade-offs are explained in [docs/decisions/](docs/decisions
   plain `select("*")` showed only the first 1000 of the 1.5k rows in `disruptions_all`
   (`src/data_access.py`, paged with a stable order). Totals and charts go up to the real numbers.
 
-#### Added (step 5c, written, not deployed yet)
+#### Added (step 5c)
 - Both tabs: "Top 10 lines" by number of items and by total hours, "starts by hour of day" and
   "starts by weekday" (Amsterdam time, zeros included). An item counts once for each line it
   touches, so per-line counts add up to more than the total (shown in a caption). Titles that name
@@ -24,7 +24,7 @@ Decisions with real trade-offs are explained in [docs/decisions/](docs/decisions
   the period filter of the coverage caption, "Data as of" and the gap times. Before, year and
   month used UTC while hour and weekday used Amsterdam time. Yearly totals can shift by a few
   items at year and month boundaries (an item starting 31 Dec 23:30 UTC now counts in January).
-- `sql/005_hour_weekday_and_lines.sql` (NOT YET RUN in Supabase): appends `start_hour` and
+- `sql/005_hour_weekday_and_lines.sql` (run in Supabase on 2026-11-11): appends `start_hour` and
   `start_isodow` to `dashboard_disruptions`, and creates the `disruption_lines` view (title split
   on `;`, trailing full stops removed, duplicates within an item dropped, station-only parts in the
   bucket "Station-wide or unnamed"). Run it before deploying this code.

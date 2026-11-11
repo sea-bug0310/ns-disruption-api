@@ -7,7 +7,7 @@
 --   2. a new view disruption_lines (roadmap decision 11): one row per item and line name, for the
 --      "Top 10 lines" charts.
 -- Safe to run while the pipeline is live. Run it by pasting the whole file into the Supabase SQL
--- editor, BEFORE the dashboard code that reads it is deployed. NOT YET RUN.
+-- editor, BEFORE the dashboard code that reads it is deployed. Run in Supabase on 2026-11-11.
 --
 -- Undo:  DROP VIEW disruption_lines;
 --        then run 004_dashboard_disruptions.sql's view definition again with CREATE OR REPLACE
