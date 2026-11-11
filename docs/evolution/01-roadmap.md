@@ -232,7 +232,10 @@ values in `disruptions_legacy`); phase is stored as `phase_id` + `phase_label`; 
   + the "Line type" sidebar filter. Deploy order: run `sql/006` in Supabase, run
   `python scripts/load_stations.py` (the flag is false everywhere until the table is filled), check
   the printed unmatched stops, run the dashboard locally, then push. In the real feed 36 of 109
-  items had an international line. This is the first station-level question, so the roadmap's
+  items had an international line. First deploy attempt failed with "permission denied for
+  function stop_country_class" (Postgres checks a view's functions against the querying user, not
+  the view owner); fixed by `sql/007` (run it if the first 006 was already run). Lesson: test views
+  as the `anon` role, not only as the owner. This is the first station-level question, so the roadmap's
   "add `disruption_stations` / `dim_station` only if a real station question appears" is
   answered for stations: `ref_station_names` is a candidate seed for iteration 6.
 - For 5e: our feed uses English station names (`Amsterdam Central`) while the 2025 CSV uses Dutch

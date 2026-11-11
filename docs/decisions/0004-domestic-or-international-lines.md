@@ -43,5 +43,9 @@ both can be selected; an item with a domestic and an international line appears 
   loader refuses to replace the table with a suspiciously small answer.
 - The rule is a heuristic. A foreign place whose name is also the start of a Dutch station
   (rule 3 runs before rule 4) would be counted as domestic. Not seen in the data so far.
+- The function runs with its owner's rights and the dashboard's key may call it (sql/006, 007),
+  because a view's functions are checked against the user querying the view, and the station
+  table is closed to that key. Supabase therefore also offers it as an API call; it only returns
+  the country class of a stop name from the public station list.
 - This is the first station-level question, so the reference table also answers the roadmap's open
   question about a station dimension for the later dbt work (iteration 6).
