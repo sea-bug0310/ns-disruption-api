@@ -28,6 +28,9 @@ tables, so it only works after the migration; deploy both together (roadmap deci
   vanished, reappearing, empty-feed guard, failed run) and with the real NS feed (105 items;
   a second run with the same data changed 0).
 
+#### Decision records
+- ADR 0002 (raw payload and hash gate) and ADR 0003 (lifecycle status) in `docs/decisions/`.
+
 #### Dashboard (`src/app.py`)
 - Reads the `disruptions_all` view (old rows + new rows, legacy columns only) instead of the
   `disruptions` table. **Do not deploy before the migration has run**, or the page breaks.
