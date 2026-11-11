@@ -16,6 +16,12 @@ Decisions with real trade-offs are explained in [docs/decisions/](docs/decisions
   tests the push. The logic was tested locally; that an empty commit by the bot really resets
   GitHub's 60-day timer is not verified yet.
 
+- `sql/003_ingestion_coverage.sql` (not run in Supabase yet): views `ingestion_runs_effective`
+  (a run stuck in `running` for 15+ minutes counts as failed; no `error` column), `ingestion_gaps`
+  (time between successful runs) and `ingestion_coverage_daily` (runs per UTC day, zero-run days
+  included). Coverage is described by gaps and runs per day, not "percent of expected runs",
+  because GitHub currently starts the schedule only a few times a day.
+
 #### Changed
 - `ns_api.yml`: runs of the pipeline can no longer overlap (`concurrency`, a second run waits for
   the first; overlapping runs would save the same new item twice), and a run is killed after
