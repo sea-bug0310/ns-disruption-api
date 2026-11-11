@@ -27,6 +27,9 @@ except Exception as e:
 # Views (see sql/): old rows (disruptions_legacy) plus rows captured by the new pipeline.
 DISRUPTIONS_VIEW = "dashboard_disruptions"  # sql/004: one row per disruption / maintenance item
 GAPS_VIEW = "ingestion_gaps"                # sql/003: time between successful pipeline runs
+LINES_VIEW = "disruption_lines"             # sql/005: one row per item and line name
+STATION_WIDE = "Station-wide or unnamed"    # bucket for titles that name a station, not a line
+WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
 # GitHub currently starts the scheduled pipeline only a few times a day (gaps of 8+ hours are
 # normal), so "stale" means no new data for half a day.
@@ -76,6 +79,14 @@ def load_data():
 
 
 @st.cache_data(ttl=300)
+def load_lines():
+    """One row per item and line, for the "top lines" charts."""
+    # row_id is unique (id alone repeats once per line), which paging needs for a stable order.
+    rows = fetch_all_rows(supabase, LINES_VIEW, order_by="row_id")
+    return prepare_disruptions(pd.DataFrame(rows))
+
+
+@st.cache_data(ttl=300)
 def load_gaps():
     """Gaps between successful pipeline runs, for the coverage caption."""
     return prepare_gaps(fetch_all_rows(supabase, GAPS_VIEW, order_by="run_at"))
@@ -100,6 +111,7 @@ def load_data_as_of():
 
 with st.spinner("Fetching data from Supabase..."):
     df_raw = load_data()
+    df_lines_raw = load_lines()
     df_gaps = load_gaps()
     data_as_of = load_data_as_of()
 
@@ -134,7 +146,21 @@ months_in_year = df_raw.loc[df_raw['Year'] == selected_year, 'Month'].unique()
 available_months = [m for m in month_order if m in months_in_year]
 selected_months = st.sidebar.multiselect("Select Month(s)", options=available_months, default=available_months)
 
-df_period = df_raw[(df_raw['Year'] == selected_year) & (df_raw['Month'].isin(selected_months))]
+def in_period(frame):
+    """Rows of `frame` in the selected year and months."""
+    if frame.empty:
+        return frame
+    return frame[(frame['Year'] == selected_year) & (frame['Month'].isin(selected_months))]
+
+
+def of_type(frame, disruption_type):
+    if frame.empty:
+        return frame
+    return frame[frame['disruption_type'] == disruption_type]
+
+
+df_period = in_period(df_raw)
+df_lines_period = in_period(df_lines_raw)
 
 # --- Coverage caption: when was the pipeline blind in the selected period? ---
 coverage_text, long_gaps = coverage_summary(df_gaps, selected_year, selected_months)
@@ -166,11 +192,11 @@ def top_counts(frame, column, n=10):
     return counts
 
 
-def horizontal_bar(counts, category_col):
+def horizontal_bar(counts, category_col, value_col="count"):
     """Single-colour horizontal bar chart with value labels and no redundant axis titles."""
     fig = px.bar(
         counts,
-        x="count",
+        x=value_col,
         y=category_col,
         orientation="h",
         text="label",
@@ -179,7 +205,7 @@ def horizontal_bar(counts, category_col):
     fig.update_traces(
         textposition="outside",
         cliponaxis=False,
-        hovertemplate="<b>%{y}</b><br>Count: %{text}<extra></extra>",
+        hovertemplate="<b>%{y}</b><br>%{text}<extra></extra>",
     )
     fig.update_layout(
         showlegend=False,
@@ -189,9 +215,32 @@ def horizontal_bar(counts, category_col):
     return fig
 
 
-def render_tab(df, key, noun, duration_label, show_causes, show_upcoming):
+def ordered_bar(labels, values):
+    """Vertical bars in a fixed order (hours 00-23, weekdays Mon-Sun), zeros included."""
+    fig = px.bar(
+        x=labels,
+        y=values,
+        text=[f"{v:,}" if v else "" for v in values],  # no "0" labels on empty bars
+        color_discrete_sequence=[BREAKDOWN_COLOR],
+    )
+    fig.update_traces(
+        textposition="outside",
+        cliponaxis=False,
+        hovertemplate="%{x}: %{y}<extra></extra>",
+    )
+    fig.update_layout(
+        showlegend=False,
+        xaxis_type="category",
+        xaxis_title=None,
+        yaxis={"visible": False},
+    )
+    return fig
+
+
+def render_tab(df, df_lines, key, noun, duration_label, show_causes, show_upcoming):
     """One tab: KPIs, trend over time and breakdowns for a set of rows.
 
+    df_lines: the same items, one row per item and line.
     key: unique prefix for widget keys (Streamlit needs one per widget).
     noun: what the rows are called in labels, e.g. "disruptions".
     """
@@ -248,6 +297,72 @@ def render_tab(df, key, noun, duration_label, show_causes, show_upcoming):
 
     st.markdown("---")
 
+    # --- Where: lines ---
+    st.subheader("Where: top lines")
+    lines = df_lines[df_lines['line'] != STATION_WIDE] if not df_lines.empty else df_lines
+
+    if lines.empty:
+        st.caption("No line names in the selected period.")
+    else:
+        left, right = st.columns(2)
+
+        with left:
+            st.markdown(f"**Top 10 lines by number of {noun}**")
+            st.plotly_chart(
+                horizontal_bar(top_counts(lines, 'line'), 'line'),
+                use_container_width=True, key=f"{key}_lines_count",
+            )
+
+        with right:
+            st.markdown("**Top 10 lines by total hours**")
+            hours = (
+                lines.groupby('line')['duration_hours'].sum()
+                .sort_values(ascending=False).head(10)
+                .rename_axis('line').reset_index(name='hours')
+            )
+            hours = hours[hours['hours'] > 0]
+            if hours.empty:
+                st.caption("No durations known for these lines.")
+            else:
+                hours['label'] = hours['hours'].map("{:,.0f} h".format)
+                st.plotly_chart(
+                    horizontal_bar(hours, 'line', value_col='hours'),
+                    use_container_width=True, key=f"{key}_lines_hours",
+                )
+
+        caption = (
+            f"An item counts once for each line it touches, so these numbers add up to more "
+            f"than the total number of {noun}."
+        )
+        station_wide = df_lines.loc[df_lines['line'] == STATION_WIDE, 'id'].nunique()
+        if station_wide:
+            caption += f" {station_wide:,} {noun} name only a station and are not shown."
+        st.caption(caption)
+
+    st.markdown("---")
+
+    # --- When: hour of day and weekday, Amsterdam time ---
+    st.subheader("When: starts by hour and weekday (Amsterdam time)")
+    left, right = st.columns(2)
+
+    with left:
+        st.markdown("**Starts by hour of day**")
+        by_hour = df['start_hour'].dropna().astype(int).value_counts().reindex(range(24), fill_value=0)
+        st.plotly_chart(
+            ordered_bar([f"{h:02d}" for h in range(24)], list(by_hour)),
+            use_container_width=True, key=f"{key}_hour",
+        )
+
+    with right:
+        st.markdown("**Starts by weekday**")
+        by_weekday = df['start_isodow'].dropna().astype(int).value_counts().reindex(range(1, 8), fill_value=0)
+        st.plotly_chart(
+            ordered_bar(WEEKDAYS, list(by_weekday)),
+            use_container_width=True, key=f"{key}_weekday",
+        )
+
+    st.markdown("---")
+
     # --- Breakdowns ---
     st.subheader("Breakdowns")
     chart_columns = st.columns(2 if show_causes else 1)
@@ -278,7 +393,8 @@ tab_disruptions, tab_maintenance = st.tabs(["Unplanned disruptions", "Planned ma
 
 with tab_disruptions:
     render_tab(
-        df_period[df_period['disruption_type'] == 'DISRUPTION'],
+        of_type(df_period, 'DISRUPTION'),
+        of_type(df_lines_period, 'DISRUPTION'),
         key="disruptions",
         noun="disruptions",
         duration_label="Median duration",
@@ -290,7 +406,8 @@ with tab_maintenance:
     # Future work counts too (status 'scheduled'). No causes chart: every maintenance item has
     # the same cause ("engineering works"), so it would be one bar.
     render_tab(
-        df_period[df_period['disruption_type'] == 'MAINTENANCE'],
+        of_type(df_period, 'MAINTENANCE'),
+        of_type(df_lines_period, 'MAINTENANCE'),
         key="maintenance",
         noun="works",
         duration_label="Median planned duration",
