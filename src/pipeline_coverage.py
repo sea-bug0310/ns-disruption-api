@@ -8,6 +8,10 @@ import pandas as pd
 
 LONG_GAP_HOURS = 12
 
+# The dashboard shows every date and time in Amsterdam time, so a year or month filter means the
+# same thing for the charts and for this caption.
+LOCAL_TZ = "Europe/Amsterdam"
+
 
 def prepare_gaps(rows):
     """Turn rows of `ingestion_gaps` into a DataFrame with UTC timestamps and `gap_hours`.
@@ -28,25 +32,25 @@ def prepare_gaps(rows):
 
 
 def _format_time(timestamp):
-    return f"{timestamp.day} {timestamp:%b %H:%M}"
+    local = timestamp.tz_convert(LOCAL_TZ)
+    return f"{local.day} {local:%b %H:%M}"
 
 
 def coverage_summary(gaps, year, months, threshold_hours=LONG_GAP_HOURS):
     """Return (caption text, DataFrame of the long gaps in the selected period).
 
-    `months` are English month names, as in the dashboard's month filter. A gap belongs to the
-    month of the run that ended it. The run log only exists since the new pipeline went live, so
+    `months` are English month names, as in the dashboard's month filter, and `year` and `months`
+    are read in Amsterdam time. A gap belongs to the month of the run that ended it. The run log only exists since the new pipeline went live, so
     earlier periods get an explanation instead of "no gaps".
     """
     if gaps.empty:
         return "Pipeline coverage is not tracked yet: no runs recorded.", gaps
 
-    tracked_since = gaps["run_at"].min()
+    local_run_at = gaps["run_at"].dt.tz_convert(LOCAL_TZ)
+    tracked_since = local_run_at.min()
     since_text = f"{tracked_since.day} {tracked_since:%b %Y}"
 
-    in_period = gaps[
-        (gaps["run_at"].dt.year == year) & gaps["run_at"].dt.strftime("%B").isin(months)
-    ]
+    in_period = gaps[(local_run_at.dt.year == year) & local_run_at.dt.strftime("%B").isin(months)]
 
     if in_period.empty:
         return (
@@ -68,6 +72,7 @@ def coverage_summary(gaps, year, months, threshold_hours=LONG_GAP_HOURS):
     return (
         f"Pipeline coverage{suffix}: {len(long_gaps)} {noun} over {threshold_hours} hours, "
         f"longest {longest['gap_hours']:.0f} h "
-        f"({_format_time(longest['previous_run_at'])} to {_format_time(longest['run_at'])} UTC). "
+        f"({_format_time(longest['previous_run_at'])} to {_format_time(longest['run_at'])}, "
+        "Amsterdam time). "
         "Disruptions in these periods may be missing."
     ), long_gaps

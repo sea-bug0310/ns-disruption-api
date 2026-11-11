@@ -3,7 +3,7 @@ from supabase import create_client, Client
 import pandas as pd
 import plotly.express as px
 from data_access import fetch_all_rows
-from pipeline_coverage import prepare_gaps, coverage_summary
+from pipeline_coverage import prepare_gaps, coverage_summary, LOCAL_TZ
 
 # 1. Page Configuration
 st.set_page_config(page_title="NS Train Disruptions Dashboard", layout="wide")
@@ -59,13 +59,16 @@ def prepare_disruptions(df):
     df['duration_hours'] = df['duration_minutes'] / 60.0
 
     # --- Time Feature Extractions ---
+    # In Amsterdam time, like the hour and weekday columns of the views (sql/005): an item that
+    # starts at 00:30 on 1 January Amsterdam time belongs to January, not to December (UTC).
     df = df[df['start_time'].notna()].copy()
-    df['Year'] = df['start_time'].dt.year
-    df['Month'] = df['start_time'].dt.strftime('%B')
-    df['Year_Month'] = df['start_time'].dt.strftime('%Y-%m')
+    local_start = df['start_time'].dt.tz_convert(LOCAL_TZ)
+    df['Year'] = local_start.dt.year
+    df['Month'] = local_start.dt.strftime('%B')
+    df['Year_Month'] = local_start.dt.strftime('%Y-%m')
 
     # Year-Week string format (e.g., '2026-W25')
-    df['Year_Week'] = df['start_time'].dt.strftime('%G-W%V')
+    df['Year_Week'] = local_start.dt.strftime('%G-W%V')
 
     return df
 
@@ -118,7 +121,7 @@ with st.spinner("Fetching data from Supabase..."):
 # --- Freshness: independent of the sidebar filters ---
 if data_as_of is not None and pd.notna(data_as_of):
     age_hours = (pd.Timestamp.now(tz="UTC") - data_as_of).total_seconds() / 3600
-    st.caption(f"Data as of {data_as_of:%Y-%m-%d %H:%M} UTC")
+    st.caption(f"Data as of {data_as_of.tz_convert(LOCAL_TZ):%Y-%m-%d %H:%M} (Amsterdam time)")
     if age_hours > STALE_AFTER_HOURS:
         st.warning(
             f"The pipeline has not seen new data for {age_hours:.0f} hours, "
@@ -136,7 +139,7 @@ available_years = sorted(df_raw['Year'].unique(), reverse=True)
 
 # Planned maintenance can lie in the future, so the newest year in the data may be next year.
 # Start on the current year when there is data for it.
-current_year = pd.Timestamp.now(tz="UTC").year
+current_year = pd.Timestamp.now(tz=LOCAL_TZ).year
 default_year_index = available_years.index(current_year) if current_year in available_years else 0
 selected_year = st.sidebar.selectbox("Select Year", options=available_years, index=default_year_index)
 
@@ -168,11 +171,13 @@ st.caption(coverage_text)
 if not long_gaps.empty:
     with st.expander("Show the gaps"):
         st.dataframe(
-            long_gaps.assign(
-                gap_hours=long_gaps['gap_hours'].round(1),
-                last_run_before_gap=long_gaps['previous_run_at'].dt.strftime('%Y-%m-%d %H:%M'),
-                first_run_after_gap=long_gaps['run_at'].dt.strftime('%Y-%m-%d %H:%M'),
-            )[['last_run_before_gap', 'first_run_after_gap', 'gap_hours']],
+            pd.DataFrame({
+                "Last run before the gap (Amsterdam time)":
+                    long_gaps['previous_run_at'].dt.tz_convert(LOCAL_TZ).dt.strftime('%Y-%m-%d %H:%M'),
+                "First run after the gap (Amsterdam time)":
+                    long_gaps['run_at'].dt.tz_convert(LOCAL_TZ).dt.strftime('%Y-%m-%d %H:%M'),
+                "Gap (hours)": long_gaps['gap_hours'].round(1),
+            }),
             hide_index=True,
             use_container_width=True,
         )
