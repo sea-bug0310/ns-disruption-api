@@ -118,7 +118,14 @@ Working style: one branch per iteration, atomic commits, entries in `CHANGELOG.m
 | Gone from the feed, `start` had passed | `resolved` |
 | Gone from the feed, `start` was still in the future | `cancelled` |
 
-## Proposed schema (not implemented, to be refined in iteration 3)
+## Schema (first proposal, implemented in iteration 3 on 2026-11-09)
+
+Implemented in [sql/001_new_capture.sql](../../sql/001_new_capture.sql). Differences from this first
+proposal: no `disruption_timespans` table (rebuildable from the raw payloads); `disruptions` has
+no km, station names or coordinates (nothing uses them; the data is in the payloads and the old
+values in `disruptions_legacy`); phase is stored as `phase_id` + `phase_label`; the
+`disruption_lines` view and the aggregation views are not built yet (iteration 5), only the
+`disruptions_all` union view exists. The proposal below is kept as written.
 
 - `disruptions_legacy`, `disruption_snapshots_legacy`: the existing tables, renamed.
 - `disruptions`: current state per item. Adds lifecycle `status`, `impact`, `phase`,
@@ -145,8 +152,8 @@ Working style: one branch per iteration, atomic commits, entries in `CHANGELOG.m
 |---|---|---|---|
 | 1 | `fix-critical-bugs` | Empty-feed crash fixed, `last_seen_at` semantics (ADR 0001), empty-feed guard | DONE, merged and pushed |
 | 2 | `dashboard-improvements` | Active section independent of filters, median KPI, data-as-of + stale warning, UTC parsing | DONE, merged and pushed |
-| 3 | `new-capture` | Rename legacy tables, SQL schema files in `sql/`, drop `isActive=true`, lifecycle status, raw payload on change, `ingestion_runs`; ADR for lifecycle + raw payload; commit `scripts/probe_ns_api.py`; add these docs | NEXT |
-| 4 | `pipeline-hardening` | Keep-alive workflow, staleness alert workflow, concurrency + timeout, coverage panel data | PLANNED |
+| 3 | `new-capture` | Rename legacy tables, SQL schema files in `sql/`, drop `isActive=true`, lifecycle status, raw payload on change, `ingestion_runs`; ADRs 0002 + 0003; probe script and these docs committed | DONE 2026-11-09, merged and pushed; migration run in Supabase |
+| 4 | `pipeline-hardening` | Keep-alive workflow, staleness alert workflow, concurrency + timeout, coverage panel data | NEXT |
 | 5 | `dashboard-v2` | SQL views (fix 1000-row cap, incl. the `disruption_lines` view), two tabs (no "Active right now"), hour/weekday bars, top lines, notice lead time, extra travel time, 2025 YTD comparison | PLANNED |
 | 6 | `dbt-star-schema` | dbt on Postgres: staging models, star schema (`fact_disruption` at one row per disruption, `dim_cause`, `dim_date`, `dim_time`; no station or line dimension, see decision 11), tests | LATER |
 | 7 | orchestration | Airflow (5-min schedule, retries) and/or a Databricks bronze/silver/gold run, to show the stack | LATER |
@@ -162,25 +169,28 @@ Working style: one branch per iteration, atomic commits, entries in `CHANGELOG.m
   `.github/workflows/ns_api.yml` is correct (every 20 min); GitHub delays or skips scheduled runs
   under load, so a long gap right after re-enabling is not necessarily a bug. Check the Actions
   tab; trigger "Run workflow" manually to confirm the pipeline works.
-- **Iteration 3 is to be done step by step, with a review between steps** (owner's request).
-  Step 1: write the SQL schema files in `sql/` (no database changes yet). Later steps, in order:
-  run the migration (decision 12), new pipeline code (drop `isActive=true`, lifecycle status,
-  payload hash gate, `ingestion_runs`), dashboard switch to the union view, ADR.
-  **Step 1 written 2026-11-09, awaiting review** (`sql/000`-`002`, branch `new-capture`, tested on
-  a scratch Postgres with the real legacy table definitions copied from Supabase, not on Supabase
-  itself). Legacy RLS checked 2026-11-09: read-only SELECT policies (`disruptions` for `public`,
-  snapshots for `authenticated`), no write policies, so the new tables' "RLS on, no policies" plus
-  read through the view matches the existing access). Choices to confirm: no
-  `disruption_timespans` table (rebuildable from the raw payloads; decision 8 is still "proposed"),
-  `disruptions_all` leaves out `scheduled`/`cancelled` rows and prefers the new row when an id
-  exists in both, one-time close of still-active legacy rows, RLS on the new tables.
-  **New pipeline code written 2026-11-09, awaiting review** (`src/ingestion.py`; tested on a
-  scratch Postgres, including a run with the real feed, never against Supabase). Finding from the
-  real feed that same day: for MAINTENANCE, NS sends `summaryAdditionalTravelTime` (68 of 104
+- **Iteration 3 done (2026-11-09).** `new-capture` was merged into `main` (fast-forward) and
+  pushed after `sql/001_new_capture.sql` was run in Supabase (the decision 12 window; no scheduled
+  run fell between the migration and the push, checked in the Actions tab). Checks: a local run
+  saved 105 items (105 new), a second run changed 0, and a manual GitHub run on `main` also
+  changed 0, so the hash is the same on Python 3.12 and 3.11. The live dashboard still ran the
+  old code for a few minutes after the push (error at the old `app.py` line 71) and worked after
+  waiting / rebooting the app. ADRs 0002 (raw payload + hash gate) and 0003 (lifecycle status)
+  written.
+  Choices made on the way: no `disruption_timespans` table; `disruptions_all` leaves out
+  `scheduled` / `cancelled` rows and prefers the new row when an id exists in both; one-time
+  close of the still-active legacy rows; RLS on the new tables with no policies (the legacy
+  tables only had read policies, so access matches); `affected_km`, station names and
+  coordinates not carried over.
+  Finding from the real feed: for MAINTENANCE, NS sends `summaryAdditionalTravelTime` (68 of 104
   items) with only a text label ("varies per journey") and **no minutes**, so the min/max columns
   are empty for maintenance and decision 8's "extra travel time" numbers are not available there.
   The label stays in the raw payload; add a column only if a chart needs it. The real feed held
   1 DISRUPTION, 104 MAINTENANCE and no CALAMITY at that moment.
+  Loose ends: `sql/000_inspect_legacy.sql` can be deleted (it did its job); the "Active right
+  now" column list in `app.py` still names `affected_km`, `from_station`, `to_station` (skipped
+  when absent, goes away in iteration 5); `import time` in `ingestion.py` is unused; the repo
+  moved to `sea-bug0310/ns-disruption-api` (local remote updated 2026-11-11).
 - Keep-alive: an empty monthly commit is the reliable method. Calling the "enable workflow" API
   may also reset the 60-day timer; unverified, test before relying on it.
 - Raw-payload storage growth is an estimate (a few hundred KB/day); measure after a week.
@@ -189,8 +199,9 @@ Working style: one branch per iteration, atomic commits, entries in `CHANGELOG.m
   updated?). The `items_changed` / `items_fetched` ratio is the ongoing check.
 - `consequence_level` is mostly blank or `LESS_TRAINS`; cause not investigated.
 - Other small items: split requirements files, replace `use_container_width`, a clearer
-  "Could not connect to Supabase" error, tests + CI, commit author config (local git identity
-  differs from the GitHub account).
+  "Could not connect to Supabase" error, tests + CI (the scratch-Postgres test scripts from
+  iteration 3 were not added to the repo). Commit author: set per repo to `sea-bug0310` with the
+  GitHub noreply address on 2026-11-09; older commits show `MiNguyen-vn <mi@pathways.no>`.
 - API specs were moved to `docs/api/` (committed 2026-11-09).
 - `dim_cause` has an open question: a disruption can have several timespans with different
   causes, and `parse_timespans` joins them into one `cause_label` string (`A | B`). Check how often
