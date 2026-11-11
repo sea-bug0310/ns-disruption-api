@@ -4,7 +4,7 @@
 -- planned maintenance item: old rows (disruptions_legacy) plus rows from the new pipeline.
 -- Additive only: one new view, no table changes, safe to run while the pipeline is live.
 -- Run it by pasting the whole file into the Supabase SQL editor, BEFORE the dashboard code that
--- reads it is deployed. NOT YET RUN.
+-- reads it is deployed. Run in Supabase on 2026-11-11.
 --
 -- Differences from disruptions_all (which the old dashboard reads and which stays untouched):
 --   - it has `status` (scheduled / active / resolved) instead of `is_active`;
