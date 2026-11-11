@@ -235,7 +235,8 @@ values in `disruptions_legacy`); phase is stored as `phase_id` + `phase_label`; 
   items had an international line. First deploy attempt failed with "permission denied for
   function stop_country_class" (Postgres checks a view's functions against the querying user, not
   the view owner); fixed by `sql/007` (run it if the first 006 was already run). Lesson: test views
-  as the `anon` role, not only as the owner. This is the first station-level question, so the roadmap's
+  as the `anon` role, not only as the owner. Written up as a learning note:
+  `docs/learning/postgres-roles-views-and-functions.md`. This is the first station-level question, so the roadmap's
   "add `disruption_stations` / `dim_station` only if a real station question appears" is
   answered for stations: `ref_station_names` is a candidate seed for iteration 6.
 - For 5e: our feed uses English station names (`Amsterdam Central`) while the 2025 CSV uses Dutch
