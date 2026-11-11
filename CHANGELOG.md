@@ -14,6 +14,21 @@ Decisions with real trade-offs are explained in [docs/decisions/](docs/decisions
   plain `select("*")` showed only the first 1000 of the 1.5k rows in `disruptions_all`
   (`src/data_access.py`, paged with a stable order). Totals and charts go up to the real numbers.
 
+#### Changed (step 5b, written, not deployed yet)
+- Dashboard split into two tabs: Unplanned disruptions and Planned maintenance, each with its own
+  KPIs, trend and breakdowns. The maintenance tab includes work that has not started yet ("Not
+  started yet" KPI) and has no causes chart (every item has the same cause).
+- Removed "Active right now" and the disruption-type filter; the tabs replace them. The year
+  filter starts on the current year (planned maintenance can make next year the newest).
+- Coverage caption next to "Data as of", from `ingestion_gaps` for the selected year and months,
+  e.g. "2 gaps over 12 hours, longest 34 h". Periods before the run log existed say so.
+- Stale warning raised from 3 to 12 hours, matching how often GitHub really runs the schedule.
+- The dashboard reads the new `dashboard_disruptions` view (`sql/004`, NOT YET RUN in Supabase)
+  instead of `disruptions_all`. Run `sql/004` before deploying this code. `disruptions_all` is no
+  longer used and can be dropped later.
+- New modules `src/pipeline_coverage.py` (caption text) and `src/data_access.py`; tested by
+  running the whole dashboard headlessly against fake data on Streamlit 1.37.1 and the latest.
+
 #### Added
 - `data/disruptions-2025.csv` (Rijden de Treinen open data, CC BY 4.0) with `data/README.md` and an
   attribution section in the README.
