@@ -5,9 +5,20 @@ on:
     - cron: "7,27,47 * * * *"
   workflow_dispatch:
 
+# Never run two pipeline runs at the same time (a manual run during a scheduled one, or
+# delayed scheduled runs arriving together): both would save the same new item twice.
+# A second run waits for the first instead of cancelling it. GitHub keeps at most one waiting
+# run, which is fine because a newer run fetches the current feed anyway.
+concurrency:
+  group: ns-pipeline
+  cancel-in-progress: false
+
 jobs:
   fetch:
     runs-on: ubuntu-latest
+    # A normal run takes about 30-40 seconds. Without this a hung run could block the pipeline
+    # for GitHub's default of 6 hours; with it the run is killed and shows up as a failure.
+    timeout-minutes: 10
 
     steps:
       - name: Checkout repo

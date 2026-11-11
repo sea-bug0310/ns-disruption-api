@@ -16,6 +16,11 @@ Decisions with real trade-offs are explained in [docs/decisions/](docs/decisions
   tests the push. The logic was tested locally; that an empty commit by the bot really resets
   GitHub's 60-day timer is not verified yet.
 
+#### Changed
+- `ns_api.yml`: runs of the pipeline can no longer overlap (`concurrency`, a second run waits for
+  the first; overlapping runs would save the same new item twice), and a run is killed after
+  10 minutes instead of GitHub's default 6 hours (`timeout-minutes`).
+
 ### Iteration 3 - New capture (branch `new-capture`)
 The SQL migration has not been run on Supabase. The new pipeline code below writes to the new
 tables, so it only works after the migration; deploy both together (roadmap decision 12).

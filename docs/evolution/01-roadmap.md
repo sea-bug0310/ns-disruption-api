@@ -193,6 +193,9 @@ values in `disruptions_legacy`); phase is stored as `phase_id` + `phase_label`; 
   moved to `sea-bug0310/ns-disruption-api` (local remote updated 2026-11-11).
 - Keep-alive: an empty monthly commit is the reliable method. Calling the "enable workflow" API
   may also reset the 60-day timer; unverified, test before relying on it.
+- A run killed by the 10-minute timeout cannot mark itself as failed, so its `ingestion_runs` row
+  stays `running`. The coverage panel and the staleness check must treat a `running` row older
+  than about 15 minutes as failed, not as in progress.
 - Raw-payload storage growth is an estimate (a few hundred KB/day); measure after a week.
 - The volatility probe only covered 5 minutes with no real changes. Optionally repeat it with
   `--wait 60`, and look at what an edited item looks like (does an array reorder when an item is
